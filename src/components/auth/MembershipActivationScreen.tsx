@@ -58,8 +58,8 @@ export const MembershipActivationScreen: React.FC<MembershipActivationScreenProp
     <div className="min-h-screen bg-[#FAF6F0] flex flex-col justify-between p-6 max-w-md mx-auto font-hind selection:bg-[#EDD6A9] selection:text-[#56020A]">
       <div className="space-y-6 pt-6">
         <div className="text-center space-y-2">
-          <div className="inline-flex p-3 bg-[#EDD6A9]/30 rounded-full text-[#56020A]">
-            <Sparkles className="w-8 h-8" />
+          <div className="inline-flex p-1.5 bg-white rounded-full border-2 border-[#56020A] shadow-md">
+            <img src="/logo.png" alt="Baby Care" className="w-14 h-14 rounded-full object-cover" />
           </div>
           <h1 className="text-2xl font-bold text-[#56020A]">প্রিমিয়াম মেম্বারশিপ অ্যাক্টিভেশন</h1>
           <p className="text-xs text-gray-600">

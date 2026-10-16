@@ -102,8 +102,8 @@ export const LoginVerifyScreen: React.FC<LoginVerifyScreenProps> = ({
         </button>
 
         <div className="space-y-1 text-center">
-          <div className="inline-flex p-3 bg-[#EDD6A9]/30 rounded-full text-[#56020A] mb-2">
-            <ShieldCheck className="w-8 h-8" />
+          <div className="inline-flex p-1.5 bg-white rounded-full border-2 border-[#56020A] shadow-md mb-2">
+            <img src="/logo.png" alt="Baby Care" className="w-14 h-14 rounded-full object-cover" />
           </div>
           <h1 className="text-2xl font-bold text-[#56020A]">ডেমো কোড যাচাইকরণ</h1>
           <p className="text-xs text-gray-600">

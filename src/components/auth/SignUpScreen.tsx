@@ -48,12 +48,18 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onProceed })
   return (
     <div className="min-h-screen bg-[#FAF6F0] flex flex-col justify-between p-6 max-w-md mx-auto font-hind selection:bg-[#EDD6A9] selection:text-[#56020A]">
       <div className="space-y-6 pt-4">
-        <button
-          onClick={onBack}
-          className="p-2 -ml-2 rounded-full hover:bg-[#EDD6A9]/30 text-[#56020A] transition-colors"
-        >
-          <ArrowLeft className="w-6 h-6" />
-        </button>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={onBack}
+            className="p-2 -ml-2 rounded-full hover:bg-[#EDD6A9]/30 text-[#56020A] transition-colors"
+          >
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+          <div className="flex items-center gap-1.5 bg-[#EDD6A9]/30 px-2.5 py-1 rounded-full border border-[#EDD6A9]/60">
+            <img src="/logo.png" alt="Baby Care" className="w-5 h-5 rounded-full object-cover" />
+            <span className="text-[11px] font-bold text-[#56020A]">Baby Care</span>
+          </div>
+        </div>
 
         <div className="space-y-1">
           <h1 className="text-2xl font-bold text-[#56020A]">নতুন অ্যাকাউন্ট তৈরি করুন</h1>

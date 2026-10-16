@@ -10,9 +10,13 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onGoToSignUp, onGo
   return (
     <div className="min-h-screen bg-[#FAF6F0] flex flex-col justify-between p-6 max-w-md mx-auto font-hind selection:bg-[#EDD6A9] selection:text-[#56020A]">
       <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 pt-10">
-        <div className="w-24 h-24 rounded-full bg-[#EDD6A9]/40 border-4 border-[#56020A] flex items-center justify-center shadow-xl text-[#56020A] relative">
-          <Heart className="w-12 h-12 fill-[#56020A]" />
-          <span className="absolute -bottom-2 bg-[#375013] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+        <div className="w-28 h-28 rounded-full bg-white border-4 border-[#56020A] flex items-center justify-center shadow-xl text-[#56020A] relative p-1">
+          <img
+            src="/logo.png"
+            alt="Baby Care Logo"
+            className="w-full h-full object-cover rounded-full"
+          />
+          <span className="absolute -bottom-2 bg-[#375013] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
             ১০০% নিরাপদ
           </span>
         </div>

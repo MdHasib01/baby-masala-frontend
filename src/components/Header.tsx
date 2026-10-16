@@ -60,12 +60,19 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </button>
 
-        {/* Center: Baby Care with 'by Baby Masala' subtitle */}
-        <div className="text-center cursor-pointer select-none" onClick={onOpenProfile}>
-          <h1 className="text-lg sm:text-xl font-bold text-[#56020A] tracking-tight leading-none">Baby Care</h1>
-          <p className="text-[10px] sm:text-[11px] font-medium text-[#375013] mt-0.5 tracking-wider uppercase">
-            by Baby Masala
-          </p>
+        {/* Center: Baby Care with 'by Baby Masala' subtitle & brand logo */}
+        <div className="flex items-center gap-2 cursor-pointer select-none" onClick={onOpenProfile}>
+          <img
+            src="/logo.png"
+            alt="Baby Care Logo"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover shadow-xs border border-[#EDD6A9]/80"
+          />
+          <div className="text-left">
+            <h1 className="text-base sm:text-lg font-bold text-[#56020A] tracking-tight leading-none">Baby Care</h1>
+            <p className="text-[9px] sm:text-[10px] font-semibold text-[#375013] mt-0.5 tracking-wider uppercase">
+              by Baby Masala
+            </p>
+          </div>
         </div>
 
         {/* Top Right: Messenger icon, Notification Bell & Admin button */}

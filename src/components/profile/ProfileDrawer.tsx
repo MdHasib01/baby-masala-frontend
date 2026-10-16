@@ -388,9 +388,12 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
               <LogOut className="w-4 h-4" />
               <span>লগআউট</span>
             </button>
-            <p className="text-[10px] text-center text-gray-400 mt-2">
-              Baby Care by Baby Masala
-            </p>
+            <div className="flex items-center justify-center gap-1.5 mt-3">
+              <img src="/logo.png" alt="Baby Care" className="w-4 h-4 rounded-full object-cover" />
+              <p className="text-[10px] text-center text-gray-400 font-medium">
+                Baby Care by Baby Masala
+              </p>
+            </div>
           </div>
         </div>
       </aside>

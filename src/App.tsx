@@ -264,8 +264,15 @@ export default function App() {
           </>
         ) : (
           <>
-            <Loader2 className="w-8 h-8 text-[#56020A] animate-spin" />
-            <p className="text-xs text-gray-600">লোড হচ্ছে...</p>
+            <img
+              src="/logo.png"
+              alt="Baby Care"
+              className="w-16 h-16 rounded-full object-cover shadow-md border-2 border-[#EDD6A9] animate-pulse"
+            />
+            <div className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 text-[#56020A] animate-spin" />
+              <p className="text-xs text-gray-600 font-medium">লোড হচ্ছে...</p>
+            </div>
           </>
         )}
       </div>
