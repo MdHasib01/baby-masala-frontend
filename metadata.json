@@ -1,0 +1,6 @@
+{
+  "name": "Baby Care by Baby Masala",
+  "description": "Trusted motherhood, nutrition, community and shop app for mothers in Bangladesh.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
