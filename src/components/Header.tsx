@@ -11,6 +11,7 @@ interface HeaderProps {
   onOpenAdmin: () => void;
   unreadNotificationsCount: number;
   unreadMessagesCount: number;
+  friendRequestsCount?: number;
   activeTab: ActiveTab;
   onChangeTab: (tab: ActiveTab) => void;
   cartCount?: number;
@@ -24,6 +25,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAdmin,
   unreadNotificationsCount,
   unreadMessagesCount,
+  friendRequestsCount = 0,
   activeTab,
   onChangeTab,
   cartCount = 0,
@@ -75,7 +77,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Top Right: Messenger icon, Notification Bell & Admin button */}
+        {/* Top Right: Admin button, Friends, Messenger & Notification Bell */}
         <div className="flex items-center gap-1 sm:gap-2">
           <button
             onClick={onOpenAdmin}
@@ -83,6 +85,19 @@ export const Header: React.FC<HeaderProps> = ({
             title="ডেমো অ্যাডমিন"
           >
             অ্যাডমিন
+          </button>
+
+          <button
+            onClick={() => onChangeTab('friends')}
+            className="relative p-2 rounded-full hover:bg-[#EDD6A9]/30 text-[#56020A] transition-colors"
+            title="ফ্রেন্ডস"
+          >
+            <Users className="w-5 h-5" />
+            {friendRequestsCount > 0 && (
+              <span className="absolute top-1 right-1 w-4 h-4 bg-[#56020A] text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                {friendRequestsCount}
+              </span>
+            )}
           </button>
 
           <button

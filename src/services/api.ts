@@ -1,9 +1,44 @@
 /**
- * Thin fetch wrapper for the Baby Care backend (see ../../../backend).
- * In development Vite proxies /api to the backend; set VITE_API_URL to point elsewhere.
+ * Resolves the backend API base URL:
+ * - If VITE_API_URL is set, respects that override.
+ * - If running on HTTPS (production/web) or babymasalabd.com, uses https://babymasalabd.com/api
+ * - If running locally (localhost, 127.0.0.1, or local network), uses http://localhost:5000/api
  */
+export function getApiBaseUrl(): string {
+  const envUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+  if (envUrl) {
+    const trimmed = envUrl.replace(/\/$/, '');
+    return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+  }
 
-const API_BASE = ((import.meta.env.VITE_API_URL as string | undefined) || '/api').replace(/\/$/, '');
+  if (typeof window !== 'undefined' && window.location) {
+    const { protocol, hostname } = window.location;
+
+    // Web version on HTTPS or babymasalabd.com domain
+    if (protocol === 'https:' || hostname === 'babymasalabd.com' || hostname.endsWith('.babymasalabd.com')) {
+      return 'https://babymasalabd.com/api';
+    }
+
+    // Local development (localhost, 127.0.0.1, or local domain)
+    if (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '0.0.0.0' ||
+      hostname.endsWith('.local')
+    ) {
+      return 'http://localhost:5000/api';
+    }
+
+    // Local network access over HTTP (e.g. mobile testing on LAN)
+    if (protocol === 'http:' && hostname) {
+      return `http://${hostname}:5000/api`;
+    }
+  }
+
+  return 'http://localhost:5000/api';
+}
+
+export const API_BASE = getApiBaseUrl();
 const TOKEN_KEY = 'babycare_token';
 
 export class ApiError extends Error {
@@ -55,9 +90,16 @@ export async function apiRequest<T>(path: string, options: { method?: string; bo
   const token = tokenStore.get();
   if (token) headers.Authorization = `Bearer ${token}`;
 
+  const base = getApiBaseUrl().replace(/\/$/, '');
+  let subPath = path.startsWith('/') ? path : `/${path}`;
+  if (base.endsWith('/api') && (subPath === '/api' || subPath.startsWith('/api/'))) {
+    subPath = subPath.slice(4) || '/';
+  }
+  const url = `${base}${subPath}`;
+
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}${path}`, {
+    res = await fetch(url, {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
@@ -76,6 +118,9 @@ export async function apiRequest<T>(path: string, options: { method?: string; bo
   }
   return data as T;
 }
+
+/** Startup (bootstrap) failures other than "no internet" — usually the server is restarting during a deploy. */
+export const UPDATING_MESSAGE = 'অ্যাপটি এই মুহূর্তে আপডেট হচ্ছে। কিছুক্ষণ পর আবার চেষ্টা করুন।';
 
 export const errorMessage = (err: unknown) =>
   err instanceof Error ? err.message : 'কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।';

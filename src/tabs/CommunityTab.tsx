@@ -49,9 +49,6 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
   onOpenRecipes,
   onOpenTimeline,
 }) => {
-  const [selectedTopic, setSelectedTopic] = useState<'সব পোস্ট' | 'খাবার' | 'ঘুম' | 'বিকাশ' | 'মায়ের গল্প'>('সব পোস্ট');
-  const [sortBy, setSortBy] = useState<'newest' | 'popular'>('newest');
-
   // Create/Edit post modal
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
@@ -81,27 +78,6 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
 
   // Reaction picker hover state
   const [reactionPickerPostId, setReactionPickerPostId] = useState<string | null>(null);
-
-  const topics: ('সব পোস্ট' | 'খাবার' | 'ঘুম' | 'বিকাশ' | 'মায়ের গল্প')[] = [
-    'সব পোস্ট',
-    'খাবার',
-    'ঘুম',
-    'বিকাশ',
-    'মায়ের গল্প',
-  ];
-
-  const filteredPosts = posts.filter((p) => {
-    if (selectedTopic !== 'সব পোস্ট' && p.topic !== selectedTopic) return false;
-    return true;
-  });
-
-  const sortedPosts = [...filteredPosts].sort((a, b) => {
-    if (sortBy === 'popular') {
-      return b.likes + b.commentsCount - (a.likes + a.commentsCount);
-    }
-    // The server returns newest first and new posts are prepended, so keep that order.
-    return 0;
-  });
 
   const replacePost = (updated: Post) => {
     onUpdatePosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
@@ -187,7 +163,8 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
     setFormError('');
 
     try {
-      const data = { content: newContent, topic: newTopic, mediaUrl: newMediaUrl || undefined };
+      // No topic picker any more: edits keep the post's topic, new posts use the default.
+      const data = { content: newContent, topic: editingPostId ? newTopic : ('খাবার' as const), mediaUrl: newMediaUrl || undefined };
       if (editingPostId) {
         const res = await babyCareService.updatePost(editingPostId, { ...data, mediaUrl: newMediaUrl });
         replacePost(res.post);
@@ -281,7 +258,13 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
             <ImageIcon className="w-4 h-4 text-[#375013]" /> ছবি বা ভিডিও
           </button>
           <button
-            onClick={() => setSelectedTopic('খাবার')}
+            onClick={() => {
+              setEditingPostId(null);
+              setNewContent('');
+              setNewMediaUrl('');
+              setNewTopic('খাবার');
+              setShowCreateModal(true);
+            }}
             className="flex items-center gap-1.5 py-1 px-3 rounded-lg hover:bg-[#FAF6F0] transition-colors"
           >
             <ShieldCheck className="w-4 h-4 text-[#D6AA4F]" /> রেসিপি টপিক
@@ -289,46 +272,15 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
         </div>
       </div>
 
-      {/* Topic Filters & Feed Sorting */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          {topics.map((topic) => (
-            <button
-              key={topic}
-              onClick={() => setSelectedTopic(topic)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-                selectedTopic === topic
-                  ? 'bg-[#56020A] text-white shadow-sm'
-                  : 'bg-white text-gray-700 hover:bg-[#EDD6A9]/30 border border-[#EDD6A9]'
-              }`}
-            >
-              {topic}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-1 self-end sm:self-auto bg-white px-2.5 py-1 rounded-xl border border-[#EDD6A9] text-[11px] font-semibold text-gray-700">
-          <span>সর্ট:</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
-            className="bg-transparent focus:outline-none text-[#56020A] font-bold"
-          >
-            <option value="newest">নতুন পোস্ট</option>
-            <option value="popular">জনপ্রিয়</option>
-          </select>
-        </div>
-      </div>
-
       {/* Posts Feed */}
       <div className="space-y-4">
-        {sortedPosts.length === 0 ? (
+        {posts.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 text-center border border-[#EDD6A9] space-y-2">
             <AlertCircle className="w-8 h-8 text-gray-400 mx-auto" />
-            <p className="text-xs text-gray-500">এই টপিকে বর্তমানে কোনো পোস্ট নেই। প্রথম পোস্টটি আপনি করতে পারেন!</p>
+            <p className="text-xs text-gray-500">এখনো কোনো পোস্ট নেই। প্রথম পোস্টটি আপনি করতে পারেন!</p>
           </div>
         ) : (
-          sortedPosts.map((post) => {
+          posts.map((post) => {
             const postComments = comments.filter((c) => c.postId === post.id);
             const isOwnPost = post.authorName === user.name;
             const isExpanded = expandedTexts[post.id];
@@ -670,20 +622,6 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
             </div>
 
             <form onSubmit={handlePublishPost} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#56020A] mb-1">টপিক নির্বাচন করুন</label>
-                <select
-                  value={newTopic}
-                  onChange={(e) => setNewTopic(e.target.value as any)}
-                  className="w-full px-3 py-2 text-xs bg-white border border-[#EDD6A9] rounded-lg focus:outline-none"
-                >
-                  <option value="খাবার">খাবার</option>
-                  <option value="ঘুম">ঘুম</option>
-                  <option value="বিকাশ">বিকাশ</option>
-                  <option value="মায়ের গল্প">মায়ের গল্প</option>
-                </select>
-              </div>
-
               <div>
                 <label className="block text-xs font-semibold text-[#56020A] mb-1">আপনার অভিজ্ঞতা লিখুন</label>
                 <textarea

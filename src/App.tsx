@@ -22,7 +22,7 @@ import {
   LeaderboardEntry,
 } from './types';
 import { babyCareService, AuthState, BootstrapData } from './services/babyCareService';
-import { errorMessage, onUnauthorized } from './services/api';
+import { ApiError, UPDATING_MESSAGE, onUnauthorized } from './services/api';
 import { Header } from './components/Header';
 import { ProfileDrawer } from './components/profile/ProfileDrawer';
 import { NotificationModal } from './components/NotificationModal';
@@ -181,7 +181,7 @@ export default function App() {
         setIsHydrated(true);
         console.error('[reload]', err);
       } else {
-        setLoadError(errorMessage(err));
+        setLoadError(err instanceof ApiError && err.code === 'NETWORK' ? err.message : UPDATING_MESSAGE);
       }
     } finally {
       setIsLoading(false);
@@ -441,6 +441,7 @@ export default function App() {
         onOpenAdmin={() => setShowAdmin(true)}
         unreadNotificationsCount={unreadNotificationsCount}
         unreadMessagesCount={unreadMessagesCount}
+        friendRequestsCount={friends.filter((f) => f.friendshipStatus === 'request_received' && !f.isBlocked).length}
         activeTab={activeTab}
         onChangeTab={setActiveTab}
         cartCount={cart.reduce((a, c) => a + c.quantity, 0)}
