@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
-import { Post, Comment, User, RewardTransaction } from '../types';
+import React, { useRef, useState } from 'react';
+import { Post, Comment, User, RewardTransaction, ReactionType } from '../types';
 import { babyCareService } from '../services/babyCareService';
 import { errorMessage } from '../services/api';
+import { applyReaction, myReactionOf, ReactionButton, ReactionSummary } from '../components/social/Reactions';
+import { EmojiButton } from '../components/EmojiPicker';
+import { celebrate } from '../lib/celebrate';
 import {
   Heart,
   MessageCircle,
@@ -74,27 +77,25 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
   // Long text expansion state per post id
   const [expandedTexts, setExpandedTexts] = useState<Record<string, boolean>>({});
 
-  // Reaction picker hover state
-  const [reactionPickerPostId, setReactionPickerPostId] = useState<string | null>(null);
+  // Comment thread: which comment the reply goes to, and threads with replies expanded
+  const [replyTo, setReplyTo] = useState<Comment | null>(null);
+  const [expandedThreads, setExpandedThreads] = useState<Record<string, boolean>>({});
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+  const commentInputRef = useRef<HTMLInputElement>(null);
 
   const replacePost = (updated: Post) => {
     onUpdatePosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
     setActivePost((prev) => (prev && prev.id === updated.id ? updated : prev));
   };
 
-  const handleReaction = async (postId: string, reactionType: string = 'like') => {
-    setReactionPickerPostId(null);
+  const handleReaction = async (postId: string, reactionType: ReactionType = 'like') => {
     const original = posts.find((p) => p.id === postId);
     if (!original) return;
 
-    // Optimistic toggle; the server's answer (and any points) replaces it.
-    replacePost({
-      ...original,
-      likedByMe: !original.likedByMe,
-      likes: original.likedByMe ? Math.max(0, original.likes - 1) : original.likes + 1,
-    });
+    // Optimistic; the server's answer (and any points) replaces it.
+    replacePost(applyReaction(original, reactionType));
     try {
-      const res = await babyCareService.reactToPost(postId);
+      const res = await babyCareService.reactToPost(postId, reactionType);
       replacePost(res.post);
       onAddRewardTx(res.rewardTx);
     } catch (err) {
@@ -172,6 +173,7 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
         const res = await babyCareService.createPost(data);
         onUpdatePosts((prev) => [res.post, ...prev]);
         onAddRewardTx(res.rewardTx);
+        celebrate();
       }
     } catch (err) {
       setFormError(errorMessage(err));
@@ -194,12 +196,14 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
     if (!content) return;
 
     try {
-      const res = await babyCareService.addComment(postId, content);
+      const parentId = replyTo?.postId === postId ? replyTo.id : undefined;
+      const res = await babyCareService.addComment(postId, content, parentId);
       onUpdateComments((prev) => [...prev, res.comment]);
       replacePost(res.post);
       onAddRewardTx(res.rewardTx);
       setNewCommentText('');
       setCommentMediaUrl('');
+      setReplyTo(null);
     } catch (err) {
       alert(errorMessage(err));
     }
@@ -379,46 +383,16 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
 
                 {/* Reaction Summary & Counts */}
                 <div className="px-4 py-2.5 flex items-center justify-between text-[11px] text-gray-500 border-t border-gray-100">
-                  <div className="flex items-center gap-1.5">
-                    <span className="inline-flex items-center justify-center w-5 h-5 bg-[#56020A] text-white rounded-full text-[10px]">👍</span>
-                    <span className="font-semibold text-gray-700">{post.likes} জন মা পছন্দ করেছেন</span>
-                  </div>
-                  <div className="flex gap-3">
-                    <span>{post.commentsCount} কমেন্ট</span>
-                    <span>·</span>
-                    <span>১২ শেয়ার</span>
-                  </div>
+                  <ReactionSummary post={post} />
+                  <button onClick={() => setActivePost(post)} className="hover:underline">
+                    {post.commentsCount.toLocaleString('bn-BD')} কমেন্ট
+                  </button>
                 </div>
 
-                {/* Action Row: রিঅ্যাক্ট, কমেন্ট, শেয়ার */}
+                {/* Action Row: রিঅ্যাক্ট, কমেন্ট, শেয়ার */}
                 <div className="px-2 py-1 border-t border-gray-100 grid grid-cols-3 gap-1 text-xs font-semibold text-gray-600 relative">
-                  {/* Reaction Button with Picker */}
-                  <div className="relative flex justify-center">
-                    <button
-                      onMouseEnter={() => setReactionPickerPostId(post.id)}
-                      onClick={() => handleReaction(post.id)}
-                      className={`w-full py-2 rounded-xl flex items-center justify-center gap-1.5 transition-colors ${
-                        post.likedByMe ? 'text-[#56020A] bg-[#EDD6A9]/20 font-bold' : 'hover:bg-gray-100'
-                      }`}
-                    >
-                      <ThumbsUp className={`w-4 h-4 ${post.likedByMe ? 'fill-[#56020A]' : ''}`} />
-                      <span>{post.likedByMe ? 'পছন্দ হয়েছে' : 'রিঅ্যাক্ট'}</span>
-                    </button>
-
-                    {/* Reaction Picker on hover / long press */}
-                    {reactionPickerPostId === post.id && (
-                      <div
-                        onMouseLeave={() => setReactionPickerPostId(null)}
-                        className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-xl border border-[#EDD6A9] px-3 py-1.5 flex items-center gap-2 z-30 animate-in fade-in zoom-in duration-150"
-                      >
-                        <button onClick={() => handleReaction(post.id, 'like')} className="hover:scale-125 transition-transform text-lg" title="ভালোলাগে">👍</button>
-                        <button onClick={() => handleReaction(post.id, 'love')} className="hover:scale-125 transition-transform text-lg" title="ভালোবাসা">❤️</button>
-                        <button onClick={() => handleReaction(post.id, 'care')} className="hover:scale-125 transition-transform text-lg" title="কেয়ার">🫂</button>
-                        <button onClick={() => handleReaction(post.id, 'haha')} className="hover:scale-125 transition-transform text-lg" title="হাহা">😆</button>
-                        <button onClick={() => handleReaction(post.id, 'wow')} className="hover:scale-125 transition-transform text-lg" title="বাহ">😲</button>
-                      </div>
-                    )}
-                  </div>
+                  {/* Hover (desktop) / long-press (touch) for the reaction picker */}
+                  <ReactionButton current={myReactionOf(post)} onReact={(t) => handleReaction(post.id, t)} />
 
                   <button
                     onClick={() => setActivePost(post)}
@@ -500,39 +474,106 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
                 )}
               </div>
 
-              {/* Comments Thread */}
+              {/* Comments Thread — replies are one level deep, like Facebook */}
               <div className="space-y-3">
                 <h4 className="text-xs font-bold text-[#56020A]">সকল কমেন্ট</h4>
-                {comments.filter((c) => c.postId === activePost.id).length === 0 ? (
-                  <p className="text-xs text-gray-500 py-4 text-center">এখনো কোনো কমেন্ট করা হয়নি। প্রথম কমেন্টটি করুন!</p>
-                ) : (
-                  comments
-                    .filter((c) => c.postId === activePost.id)
-                    .map((comm) => (
-                      <div key={comm.id} className="bg-white p-3 rounded-xl border border-[#EDD6A9]/50 space-y-1 text-xs">
-                        <div className="flex items-center justify-between">
+                {(() => {
+                  const postComments = comments.filter((c) => c.postId === activePost.id);
+                  if (postComments.length === 0) {
+                    return <p className="text-xs text-gray-500 py-4 text-center">এখনো কোনো কমেন্ট করা হয়নি। প্রথম কমেন্টটি করুন!</p>;
+                  }
+                  const ids = new Set(postComments.map((c) => c.id));
+                  const topLevel = postComments.filter((c) => !c.parentId || !ids.has(c.parentId));
+                  const repliesOf = (id: string) => postComments.filter((c) => c.parentId === id);
+
+                  const bubble = (comm: Comment, small = false) => (
+                    <div key={comm.id} className="flex items-start gap-2 text-xs">
+                      <img
+                        src={comm.authorAvatar}
+                        alt={comm.authorName}
+                        onClick={() => onOpenTimeline?.(comm.authorName)}
+                        className={`${small ? 'w-6 h-6' : 'w-8 h-8'} rounded-full object-cover cursor-pointer shrink-0`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="inline-block max-w-full bg-white px-3 py-2 rounded-2xl border border-[#EDD6A9]/50">
                           <span
                             onClick={() => onOpenTimeline?.(comm.authorName)}
-                            className="font-bold text-[#56020A] cursor-pointer hover:underline"
+                            className="font-bold text-[#56020A] cursor-pointer hover:underline block"
                           >
                             {comm.authorName}
                           </span>
-                          <span className="text-[10px] text-gray-400">{comm.createdAt}</span>
+                          <p className="text-gray-700 whitespace-pre-line break-words">{comm.content}</p>
                         </div>
-                        <p className="text-gray-700">{comm.content}</p>
+                        <div className="flex gap-3 pl-3 mt-0.5 text-[10px]">
+                          <span className="text-gray-400">{comm.createdAt}</span>
+                          <button
+                            onClick={() => {
+                              setReplyTo(comm);
+                              setExpandedThreads((x) => ({ ...x, [comm.parentId || comm.id]: true }));
+                              commentInputRef.current?.focus();
+                            }}
+                            className="font-bold text-gray-600 hover:underline"
+                          >
+                            উত্তর দিন
+                          </button>
+                        </div>
                       </div>
-                    ))
-                )}
+                    </div>
+                  );
+
+                  return topLevel.map((c) => {
+                    const replies = repliesOf(c.id);
+                    const open = expandedThreads[c.id] || replies.length === 1;
+                    return (
+                      <div key={c.id} className="space-y-2">
+                        {bubble(c)}
+                        {replies.length > 0 && (
+                          <div className="pl-10 space-y-2">
+                            {open ? (
+                              replies.map((r) => bubble(r, true))
+                            ) : (
+                              <button
+                                onClick={() => setExpandedThreads((x) => ({ ...x, [c.id]: true }))}
+                                className="flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:underline"
+                              >
+                                <CornerDownRight className="w-3.5 h-3.5" />
+                                {replies.length.toLocaleString('bn-BD')}টি উত্তর দেখুন
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </div>
 
             {/* Sticky comment input */}
-            <div className="p-3 bg-white border-t border-[#EDD6A9] flex gap-2">
+            {replyTo && replyTo.postId === activePost.id && (
+              <div className="px-3 py-1.5 bg-[#EDD6A9]/30 border-t border-[#EDD6A9] flex items-center justify-between text-[11px] text-gray-600">
+                <span>
+                  <b>{replyTo.authorName}</b>-কে উত্তর দিচ্ছেন
+                </span>
+                <button onClick={() => setReplyTo(null)} className="p-0.5 rounded-full hover:bg-white/60" aria-label="বাতিল">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+            <div className="p-3 bg-white border-t border-[#EDD6A9] flex items-center gap-1.5">
+              <EmojiButton fieldRef={commentInputRef} value={newCommentText} onChange={setNewCommentText} />
               <input
+                ref={commentInputRef}
                 type="text"
                 value={newCommentText}
                 onChange={(e) => setNewCommentText(e.target.value)}
-                placeholder="একটি সুন্দর কমেন্ট লিখুন..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAddComment(activePost.id);
+                  }
+                }}
+                placeholder={replyTo && replyTo.postId === activePost.id ? 'উত্তর লিখুন...' : 'একটি সুন্দর কমেন্ট লিখুন...'}
                 className="flex-1 px-3 py-2 text-xs bg-[#FAF6F0] border border-[#EDD6A9] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#56020A]"
               />
               <button
@@ -606,12 +647,16 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
               <div>
                 <label className="block text-xs font-semibold text-[#56020A] mb-1">আপনার অভিজ্ঞতা লিখুন</label>
                 <textarea
+                  ref={composerRef}
                   rows={4}
                   value={newContent}
                   onChange={(e) => setNewContent(e.target.value)}
                   placeholder="কী শেয়ার করতে চান মা?"
                   className="w-full px-3 py-2 text-xs bg-white border border-[#EDD6A9] rounded-lg focus:outline-none"
                 />
+                <div className="flex justify-end -mt-1">
+                  <EmojiButton fieldRef={composerRef} value={newContent} onChange={setNewContent} placement="bottom" />
+                </div>
               </div>
 
               <div>

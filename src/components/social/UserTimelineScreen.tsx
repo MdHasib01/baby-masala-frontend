@@ -1,8 +1,11 @@
 import React, { useRef, useState } from 'react';
-import { User, FriendUser, Post, RewardTransaction } from '../../types';
+import { User, FriendUser, Post, ReactionType, RewardTransaction } from '../../types';
 import { babyCareService } from '../../services/babyCareService';
 import { errorMessage } from '../../services/api';
+import { celebrate } from '../../lib/celebrate';
+import { EmojiButton } from '../EmojiPicker';
 import { ImageCropModal } from '../ImageCropModal';
+import { applyReaction, myReactionOf, ReactionButton, ReactionSummary } from './Reactions';
 import {
   ArrowLeft,
   Cake,
@@ -84,6 +87,7 @@ export const UserTimelineScreen: React.FC<UserTimelineScreenProps> = ({
   // Post composer state for 'me'
   const [newPostContent, setNewPostContent] = useState('');
   const [newPostMedia, setNewPostMedia] = useState('');
+  const postInputRef = useRef<HTMLInputElement>(null);
   const [postAudience, setPostAudience] = useState<'public' | 'friends'>('public');
 
   // Image lightbox view
@@ -168,7 +172,21 @@ export const UserTimelineScreen: React.FC<UserTimelineScreenProps> = ({
       onAddRewardTx?.(res.rewardTx);
       setNewPostContent('');
       setNewPostMedia('');
+      celebrate();
     } catch (err) {
+      alert(errorMessage(err));
+    }
+  };
+
+  const handleReact = async (original: Post, type: ReactionType) => {
+    const swap = (p: Post) => onUpdatePosts((prev) => prev.map((x) => (x.id === p.id ? p : x)));
+    swap(applyReaction(original, type)); // optimistic
+    try {
+      const res = await babyCareService.reactToPost(original.id, type);
+      swap(res.post);
+      onAddRewardTx?.(res.rewardTx);
+    } catch (err) {
+      swap(original);
       alert(errorMessage(err));
     }
   };
@@ -370,12 +388,14 @@ export const UserTimelineScreen: React.FC<UserTimelineScreenProps> = ({
                   <div className="flex items-center gap-3">
                     <img src={currentUser.avatar} alt={currentUser.name} className="w-10 h-10 rounded-full object-cover" />
                     <input
+                      ref={postInputRef}
                       type="text"
                       value={newPostContent}
                       onChange={(e) => setNewPostContent(e.target.value)}
                       placeholder="আজ আপনার মনে কী চলছে, আপু?"
                       className="flex-1 bg-[#FAF6F0] border border-[#EDD6A9] rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#56020A]"
                     />
+                    <EmojiButton fieldRef={postInputRef} value={newPostContent} onChange={setNewPostContent} placement="bottom" />
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between pt-2 border-t border-gray-100 gap-2">
@@ -452,8 +472,11 @@ export const UserTimelineScreen: React.FC<UserTimelineScreenProps> = ({
                     )}
 
                     <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-[11px] text-gray-500">
-                      <span>❤️ {post.likes} প্রতিক্রিয়া</span>
-                      <span>💬 {post.commentsCount} কমেন্ট</span>
+                      <ReactionSummary post={post} />
+                      <span>{post.commentsCount.toLocaleString('bn-BD')} কমেন্ট</span>
+                    </div>
+                    <div className="flex border-t border-gray-100 pt-1">
+                      <ReactionButton current={myReactionOf(post)} onReact={(t) => handleReact(post, t)} />
                     </div>
                   </div>
                 ))

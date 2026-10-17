@@ -12,6 +12,7 @@
 import {
   User,
   Complaint,
+  ReactionType,
   ComplaintCategory,
   ComplaintStatus,
   Child,
@@ -142,12 +143,14 @@ export const babyCareService = {
   updatePost: (postId: string, data: { content?: string; topic?: Post['topic']; mediaUrl?: string }) =>
     patch<{ post: Post }>(`/posts/${id(postId)}`, data),
   deletePost: (postId: string) => del<{ ok: true }>(`/posts/${id(postId)}`),
-  reactToPost: (postId: string) => post<WithReward<{ post: Post }>>(`/posts/${id(postId)}/react`),
+  /** Same type again removes the reaction; another type switches. */
+  reactToPost: (postId: string, type: ReactionType = 'like') =>
+    post<WithReward<{ post: Post }>>(`/posts/${id(postId)}/react`, { type }),
   toggleSavePost: (postId: string) => post<{ post: Post }>(`/posts/${id(postId)}/save`),
   hidePost: (postId: string) => post<{ ok: true }>(`/posts/${id(postId)}/hide`),
   reportPost: (postId: string, reason?: string) => post<{ ok: true }>(`/posts/${id(postId)}/report`, { reason }),
-  addComment: (postId: string, content: string) =>
-    post<WithReward<{ comment: Comment; post: Post }>>(`/posts/${id(postId)}/comments`, { content }),
+  addComment: (postId: string, content: string, parentId?: string) =>
+    post<WithReward<{ comment: Comment; post: Post }>>(`/posts/${id(postId)}/comments`, { content, parentId }),
 
   // ---- Recipes ----
   toggleSaveRecipe: (recipeId: string) => post<{ recipe: Recipe }>(`/recipes/${id(recipeId)}/save`),

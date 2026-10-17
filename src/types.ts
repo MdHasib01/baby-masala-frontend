@@ -43,9 +43,13 @@ export interface User {
   };
 }
 
+export type ReactionType = 'like' | 'love' | 'haha' | 'care';
+
 export interface Comment {
   id: string;
   postId: string;
+  /** Top-level comment this replies to (replies are one level deep). */
+  parentId?: string | null;
   authorName: string;
   authorAvatar: string;
   content: string;
@@ -66,6 +70,10 @@ export interface Post {
   createdAt: string;
   likes: number;
   likedByMe?: boolean;
+  /** The viewer's reaction, or null. */
+  myReaction?: ReactionType | null;
+  /** Reaction type → count (sums to `likes`). */
+  reactionCounts?: Partial<Record<ReactionType, number>>;
   savedByMe?: boolean;
   commentsCount: number;
   status: 'approved' | 'pending' | 'rejected';

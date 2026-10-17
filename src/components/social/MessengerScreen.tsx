@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Conversation, Message, FriendUser } from '../../types';
 import { ArrowLeft, Search, Send, Image as ImageIcon, MoreVertical, ShieldAlert, CheckCheck, X } from 'lucide-react';
+import { EmojiButton } from '../EmojiPicker';
 
 interface MessengerScreenProps {
   conversations: Conversation[];
@@ -40,6 +41,7 @@ export const MessengerScreen: React.FC<MessengerScreenProps> = ({
   });
 
   const [inputText, setInputText] = useState('');
+  const messageInputRef = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -201,7 +203,9 @@ export const MessengerScreen: React.FC<MessengerScreenProps> = ({
 
               {/* Chat Composer */}
               <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-[#EDD6A9] flex gap-2">
+                <EmojiButton fieldRef={messageInputRef} value={inputText} onChange={setInputText} />
                 <input
+                  ref={messageInputRef}
                   type="text"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
