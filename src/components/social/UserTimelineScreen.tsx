@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { User, FriendUser, Post, RewardTransaction } from '../../types';
 import { babyCareService } from '../../services/babyCareService';
 import { errorMessage } from '../../services/api';
+import { ImageCropModal } from '../ImageCropModal';
 import {
   ArrowLeft,
-  Camera,
+  Cake,
   Edit3,
+  Eye,
+  ImagePlus,
+  Pencil,
   MapPin,
   ShieldCheck,
   UserPlus,
@@ -68,7 +72,7 @@ export const UserTimelineScreen: React.FC<UserTimelineScreenProps> = ({
   const displayName = isMe ? currentUser.name : resolvedFriend.name;
   const displayAvatar = isMe ? currentUser.avatar : resolvedFriend.avatar;
   const displayBio = isMe ? ((currentUser as any).bio || 'মাতৃত্বের সুদিন ও শিশু পরিচর্যা নিয়ে আমার অভিজ্ঞতা।') : resolvedFriend.bio;
-  const displayLocation = isMe ? (currentUser.addresses[0]?.details || 'ঢাকা, বাংলাদেশ') : resolvedFriend.location;
+  const displayLocation = isMe ? (currentUser.location || currentUser.addresses[0]?.details || 'ঢাকা, বাংলাদেশ') : resolvedFriend.location;
 
   const [activeTab, setActiveTab] = useState<'posts' | 'about' | 'photos'>('posts');
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
@@ -84,6 +88,48 @@ export const UserTimelineScreen: React.FC<UserTimelineScreenProps> = ({
 
   // Image lightbox view
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
+
+  // Profile info + Facebook-style photo change (menu → file → crop → saved right away)
+  const [editLocation, setEditLocation] = useState(currentUser.location || '');
+  const [editDob, setEditDob] = useState(currentUser.dateOfBirth || '');
+  const [photoMenu, setPhotoMenu] = useState<'avatar' | 'cover' | null>(null);
+  const [cropTarget, setCropTarget] = useState<{ kind: 'avatar' | 'cover'; file: File } | null>(null);
+  const [photoSaving, setPhotoSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const pickKind = useRef<'avatar' | 'cover'>('avatar');
+
+  const choosePhotoFile = (kind: 'avatar' | 'cover') => {
+    pickKind.current = kind;
+    setPhotoMenu(null);
+    fileInputRef.current?.click();
+  };
+
+  const savePhoto = async (kind: 'avatar' | 'cover', dataUrl: string) => {
+    setCropTarget(null);
+    setPhotoSaving(true);
+    try {
+      // The server uploads to Cloudinary and copies the avatar onto posts & comments.
+      const res = await babyCareService.updateProfile(
+        kind === 'avatar' ? { ...currentUser, avatar: dataUrl } : { ...currentUser, coverPhoto: dataUrl }
+      );
+      onUpdateCurrentUser(res.user);
+      if (kind === 'avatar') setEditAvatar(res.user.avatar);
+      else setEditCover(res.user.coverPhoto || dataUrl);
+    } catch (err) {
+      alert(errorMessage(err));
+    } finally {
+      setPhotoSaving(false);
+    }
+  };
+
+  const coverSrc = isMe
+    ? editCover
+    : 'https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=1200&auto=format&fit=crop&q=80';
+
+  const formatBnDate = (ymd: string) => {
+    const d = new Date(ymd + 'T00:00:00');
+    return isNaN(d.getTime()) ? ymd : d.toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' });
+  };
 
   // Filter posts belonging to this user
   const userPosts = posts.filter((p) => p.authorName === displayName);
@@ -145,7 +191,9 @@ export const UserTimelineScreen: React.FC<UserTimelineScreenProps> = ({
       avatar: editAvatar,
       bio: editBio,
       coverPhoto: editCover,
-    } as any);
+      location: editLocation.trim(),
+      dateOfBirth: editDob,
+    });
     setShowEditProfileModal(false);
   };
 
@@ -166,25 +214,38 @@ export const UserTimelineScreen: React.FC<UserTimelineScreenProps> = ({
         <div className="relative">
           <div className="h-48 sm:h-64 w-full bg-[#EDD6A9]/30 relative overflow-hidden">
             <img
-              src={isMe ? editCover : 'https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=1200&auto=format&fit=crop&q=80'}
+              src={coverSrc}
               alt="Cover"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover cursor-pointer"
+              onClick={() => (isMe ? setPhotoMenu('cover') : setLightboxImg(coverSrc))}
             />
-            {isMe && (
-              <button
-                onClick={() => setShowEditProfileModal(true)}
-                className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold text-[#56020A] shadow-md flex items-center gap-1.5 hover:bg-white"
-              >
-                <Camera className="w-4 h-4" /> কভার পরিবর্তন করুন
-              </button>
-            )}
+            {isMe && <PhotoEditButton title="কভার ছবি পরিবর্তন" onClick={() => setPhotoMenu('cover')} className="absolute bottom-3 right-3" />}
           </div>
 
           {/* Profile Avatar */}
           <div className="px-4 pb-4 border-b border-[#EDD6A9] relative flex flex-col sm:flex-row items-center sm:items-end justify-between -mt-16 sm:-mt-20 gap-4">
             <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 text-center sm:text-left">
-              <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-white shadow-xl bg-white relative shrink-0">
-                <img src={displayAvatar} alt={displayName} className="w-full h-full object-cover" />
+              <div className="relative shrink-0">
+                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-white shadow-xl bg-white">
+                  <img
+                    src={displayAvatar}
+                    alt={displayName}
+                    className="w-full h-full object-cover cursor-pointer"
+                    onClick={() => (isMe ? setPhotoMenu('avatar') : setLightboxImg(displayAvatar))}
+                  />
+                </div>
+                {isMe && (
+                  <PhotoEditButton
+                    title="প্রোফাইল ছবি পরিবর্তন"
+                    onClick={() => setPhotoMenu('avatar')}
+                    className="absolute bottom-1 right-1"
+                  />
+                )}
+                {photoSaving && (
+                  <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
+                    <div className="w-7 h-7 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                  </div>
+                )}
               </div>
               <div className="pb-1">
                 <h2 className="text-lg sm:text-xl font-bold text-[#56020A] flex items-center justify-center sm:justify-start gap-1.5">
@@ -413,6 +474,12 @@ export const UserTimelineScreen: React.FC<UserTimelineScreenProps> = ({
                   <p className="font-bold text-[#56020A] mb-1">এলাকা</p>
                   <p>{displayLocation}</p>
                 </div>
+                {isMe && currentUser.dateOfBirth && (
+                  <div className="p-3 bg-[#FAF6F0] rounded-xl border border-[#EDD6A9]">
+                    <p className="font-bold text-[#56020A] mb-1">জন্মতারিখ (শুধু আপনি দেখতে পারবেন)</p>
+                    <p>{formatBnDate(currentUser.dateOfBirth)}</p>
+                  </div>
+                )}
                 <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl flex items-start gap-2">
                   <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                   <p className="text-[11px] text-amber-800">
@@ -472,6 +539,16 @@ export const UserTimelineScreen: React.FC<UserTimelineScreenProps> = ({
             </div>
 
             <form onSubmit={handleSaveProfileEdit} className="space-y-3 text-xs">
+              {/* Cover + profile picture, laid out like the timeline header */}
+              <div className="relative mb-12">
+                <img src={editCover} alt="Cover" className="w-full aspect-[2.6] object-cover rounded-xl" />
+                <PhotoEditButton title="কভার ছবি পরিবর্তন" onClick={() => choosePhotoFile('cover')} className="absolute bottom-2 right-2" />
+                <div className="absolute -bottom-10 left-3">
+                  <img src={editAvatar} alt="" className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md bg-white" />
+                  <PhotoEditButton title="প্রোফাইল ছবি পরিবর্তন" onClick={() => choosePhotoFile('avatar')} className="absolute bottom-0 right-0" />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-gray-600 font-bold mb-1">মায়ের নাম</label>
                 <input
@@ -494,23 +571,33 @@ export const UserTimelineScreen: React.FC<UserTimelineScreenProps> = ({
               </div>
 
               <div>
-                <label className="block text-gray-600 font-bold mb-1">প্রোফাইল ছবির লিংক (URL)</label>
-                <input
-                  type="text"
-                  value={editAvatar}
-                  onChange={(e) => setEditAvatar(e.target.value)}
-                  className="w-full p-2.5 bg-[#FAF6F0] border border-[#EDD6A9] rounded-xl focus:outline-none"
-                />
+                <label className="block text-gray-600 font-bold mb-1">এলাকা</label>
+                <div className="relative">
+                  <MapPin className="w-4 h-4 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={editLocation}
+                    onChange={(e) => setEditLocation(e.target.value)}
+                    maxLength={120}
+                    placeholder="যেমন: মিরপুর, ঢাকা"
+                    className="w-full p-2.5 pl-8 bg-[#FAF6F0] border border-[#EDD6A9] rounded-xl focus:outline-none"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-gray-600 font-bold mb-1">কভার ছবির লিংক (URL)</label>
-                <input
-                  type="text"
-                  value={editCover}
-                  onChange={(e) => setEditCover(e.target.value)}
-                  className="w-full p-2.5 bg-[#FAF6F0] border border-[#EDD6A9] rounded-xl focus:outline-none"
-                />
+                <label className="block text-gray-600 font-bold mb-1">জন্মতারিখ</label>
+                <div className="relative">
+                  <Cake className="w-4 h-4 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="date"
+                    value={editDob}
+                    onChange={(e) => setEditDob(e.target.value)}
+                    max={new Date(new Date().getFullYear() - 12, 11, 31).toISOString().slice(0, 10)}
+                    className="w-full p-2.5 pl-8 bg-[#FAF6F0] border border-[#EDD6A9] rounded-xl focus:outline-none"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1">জন্মতারিখ শুধু আপনি দেখতে পারবেন।</p>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
@@ -532,6 +619,71 @@ export const UserTimelineScreen: React.FC<UserTimelineScreenProps> = ({
           </div>
         </div>
       )}
+
+      {/* Facebook-style photo change: hidden picker → menu → crop */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = '';
+          if (file) setCropTarget({ kind: pickKind.current, file });
+        }}
+      />
+
+      {photoMenu && (
+        <div className="fixed inset-0 z-[65] bg-black/50 flex items-end sm:items-center justify-center" onClick={() => setPhotoMenu(null)}>
+          <div className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl p-2 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => {
+                setLightboxImg(photoMenu === 'cover' ? coverSrc : displayAvatar);
+                setPhotoMenu(null);
+              }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#FAF6F0] text-sm font-semibold text-gray-800"
+            >
+              <Eye className="w-5 h-5 text-[#56020A]" />
+              {photoMenu === 'cover' ? 'কভার ছবি দেখুন' : 'প্রোফাইল ছবি দেখুন'}
+            </button>
+            <button
+              onClick={() => choosePhotoFile(photoMenu)}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#FAF6F0] text-sm font-semibold text-gray-800"
+            >
+              <ImagePlus className="w-5 h-5 text-[#56020A]" />
+              {photoMenu === 'cover' ? 'নতুন কভার ছবি দিন' : 'নতুন প্রোফাইল ছবি দিন'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {cropTarget && (
+        <ImageCropModal
+          file={cropTarget.file}
+          aspect={cropTarget.kind === 'cover' ? 2.6 : 1}
+          circle={cropTarget.kind === 'avatar'}
+          outputWidth={cropTarget.kind === 'cover' ? 1280 : 500}
+          title={cropTarget.kind === 'cover' ? 'কভার ছবি ঠিক করুন' : 'প্রোফাইল ছবি ঠিক করুন'}
+          onCancel={() => setCropTarget(null)}
+          onDone={(url) => savePhoto(cropTarget.kind, url)}
+        />
+      )}
     </div>
   );
 };
+
+/** Small round pencil button over a photo (Facebook-style, icon only). */
+const PhotoEditButton: React.FC<{ title: string; onClick: () => void; className?: string }> = ({ title, onClick, className = '' }) => (
+  <button
+    type="button"
+    title={title}
+    aria-label={title}
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick();
+    }}
+    className={`w-9 h-9 rounded-full bg-[#FAF6F0] border-2 border-white shadow-md flex items-center justify-center text-[#56020A] hover:bg-[#EDD6A9] transition-colors ${className}`}
+  >
+    <Pencil className="w-4 h-4" />
+  </button>
+);

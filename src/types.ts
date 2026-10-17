@@ -15,6 +15,8 @@ export interface User {
   isAdmin?: boolean;
   bio?: string;
   coverPhoto?: string;
+  location?: string;
+  dateOfBirth?: string; // YYYY-MM-DD
   earnedPoints?: number;
   spentPoints?: number;
   isVerified: boolean;
@@ -189,7 +191,24 @@ export interface NotificationItem {
   message: string;
   time: string;
   read: boolean;
-  type: 'reward' | 'order' | 'community' | 'tip' | 'friend' | 'message' | 'doctor';
+  type: 'reward' | 'order' | 'community' | 'tip' | 'friend' | 'message' | 'doctor' | 'complaint';
+}
+
+export type ComplaintCategory = 'order' | 'product' | 'payment' | 'app' | 'community' | 'other';
+export type ComplaintStatus = 'open' | 'in_progress' | 'resolved';
+
+export interface Complaint {
+  id: string;
+  userId: string;
+  userName: string;
+  userContact: string;
+  category: ComplaintCategory;
+  details: string;
+  attachmentUrl?: string;
+  status: ComplaintStatus;
+  adminReply: string;
+  createdAt: string; // Bengali relative label
+  updatedAt: string;
 }
 
 // Friends & Social Types

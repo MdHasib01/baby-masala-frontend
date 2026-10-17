@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Contest, ContestSubmission, Order, Post, Product } from '../types';
+import { Complaint, ComplaintStatus, Contest, ContestSubmission, Order, Post, Product } from '../types';
 import { X, Shield, Package, ShoppingBag, Gift, Users, FileText, CheckCircle2, Trash2 } from 'lucide-react';
 import { babyCareService } from '../services/babyCareService';
 import { errorMessage } from '../services/api';
+import { COMPLAINT_STATUSES, ComplaintCard } from './profile/ComplaintsModal';
 
 interface AdminModalProps {
   contests: Contest[];
@@ -12,7 +13,9 @@ interface AdminModalProps {
 
 /** Admin console. Loads all users' posts and orders from the admin API (admins only). */
 export const AdminModal: React.FC<AdminModalProps> = ({ contests, isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState<'posts' | 'orders' | 'products' | 'contests' | 'coupons'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'orders' | 'products' | 'contests' | 'complaints' | 'coupons'>('posts');
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [posts, setPosts] = useState<Post[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -29,6 +32,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ contests, isOpen, onClos
         setOrders(data.orders);
         setProducts(data.products);
         setSubmissions(data.submissions);
+        setComplaints(data.complaints || []);
       })
       .catch((err) => setLoadError(errorMessage(err)));
   }, [isOpen]);
@@ -49,6 +53,16 @@ export const AdminModal: React.FC<AdminModalProps> = ({ contests, isOpen, onClos
     const stock = Math.max(0, newStock);
     setProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, stock } : p)));
     babyCareService.admin.updateProduct(productId, { stock }).catch((err) => alert(errorMessage(err)));
+  };
+
+  const handleUpdateComplaint = async (complaintId: string, data: { status?: ComplaintStatus; adminReply?: string }) => {
+    try {
+      const res = await babyCareService.admin.updateComplaint(complaintId, data);
+      setComplaints((prev) => prev.map((c) => (c.id === complaintId ? res.complaint : c)));
+      setReplyDrafts(({ [complaintId]: _, ...rest }) => rest);
+    } catch (err) {
+      alert(errorMessage(err));
+    }
   };
 
   const handleDeletePost = async (postId: string) => {
@@ -110,6 +124,14 @@ export const AdminModal: React.FC<AdminModalProps> = ({ contests, isOpen, onClos
             }`}
           >
             কনটেস্ট ও সাবমিশন ({submissions.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('complaints')}
+            className={`px-4 py-3 whitespace-nowrap border-b-2 transition-colors ${
+              activeTab === 'complaints' ? 'border-[#56020A] bg-white text-[#56020A]' : 'border-transparent'
+            }`}
+          >
+            অভিযোগ ({complaints.filter((c) => c.status !== 'resolved').length})
           </button>
           <button
             onClick={() => setActiveTab('coupons')}
@@ -220,6 +242,60 @@ export const AdminModal: React.FC<AdminModalProps> = ({ contests, isOpen, onClos
                   <p className="text-xs text-gray-600">{c.description}</p>
                   <p className="text-xs font-semibold text-[#375013]">পুরস্কার: {c.prize}</p>
                 </div>
+              ))}
+            </div>
+          )}
+
+          {activeTab === 'complaints' && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-[#56020A]">ইউজারদের অভিযোগ</h3>
+              {complaints.length === 0 && <p className="text-xs text-gray-500">কোনো অভিযোগ নেই।</p>}
+              {complaints.map((c) => (
+                <ComplaintCard
+                  key={c.id}
+                  complaint={c}
+                  showUser
+                  footer={
+                    <div className="space-y-2 pt-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500">স্ট্যাটাস:</span>
+                        <select
+                          value={c.status}
+                          onChange={(e) => handleUpdateComplaint(c.id, { status: e.target.value as ComplaintStatus })}
+                          className="px-2 py-1 border border-[#EDD6A9] rounded-lg bg-white font-semibold text-[#56020A]"
+                        >
+                          {(Object.keys(COMPLAINT_STATUSES) as ComplaintStatus[]).map((s) => (
+                            <option key={s} value={s}>
+                              {COMPLAINT_STATUSES[s]}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          value={replyDrafts[c.id] ?? c.adminReply}
+                          onChange={(e) => setReplyDrafts((d) => ({ ...d, [c.id]: e.target.value }))}
+                          maxLength={1000}
+                          placeholder="উত্তর লিখুন (ইউজার নোটিফিকেশনে পাবেন)"
+                          className="flex-1 px-2.5 py-1.5 border border-[#EDD6A9] rounded-lg bg-[#FAF6F0] focus:outline-none"
+                        />
+                        <button
+                          onClick={() => {
+                            const reply = (replyDrafts[c.id] ?? c.adminReply).trim();
+                            // Replying moves a fresh complaint along to "in progress".
+                            handleUpdateComplaint(c.id, {
+                              adminReply: reply,
+                              ...(c.status === 'open' && reply ? { status: 'in_progress' as const } : {}),
+                            });
+                          }}
+                          className="px-3 py-1.5 bg-[#56020A] text-white rounded-lg font-bold"
+                        >
+                          পাঠান
+                        </button>
+                      </div>
+                    </div>
+                  }
+                />
               ))}
             </div>
           )}

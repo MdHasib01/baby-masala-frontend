@@ -24,8 +24,8 @@ import {
   Copy,
   Check,
   AlertCircle,
-  Utensils,
-  ChevronRight
+
+
 } from 'lucide-react';
 
 interface CommunityTabProps {
@@ -35,7 +35,6 @@ interface CommunityTabProps {
   onUpdateComments: React.Dispatch<React.SetStateAction<Comment[]>>;
   user: User;
   onAddRewardTx: (tx: RewardTransaction | null) => void;
-  onOpenRecipes: () => void;
   onOpenTimeline?: (authorName: string) => void;
 }
 
@@ -46,7 +45,6 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
   onUpdateComments,
   user,
   onAddRewardTx,
-  onOpenRecipes,
   onOpenTimeline,
 }) => {
   // Create/Edit post modal
@@ -216,23 +214,6 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
 
   return (
     <div className="pb-28 max-w-2xl mx-auto px-3 sm:px-4 pt-3 space-y-4">
-      {/* Recipe & Tips Quick Shortcut Banner */}
-      <div
-        onClick={onOpenRecipes}
-        className="bg-gradient-to-r from-[#56020A] to-[#375013] text-white p-3.5 rounded-2xl shadow-sm flex items-center justify-between cursor-pointer hover:opacity-95 transition-opacity"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white">
-            <Utensils className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-xs font-bold">রেসিপি ও পুষ্টি টিপস</h3>
-            <p className="text-[10px] text-[#EDD6A9]">শিশুর বয়স অনুযায়ী স্বাস্থ্যকর খাবার ও রেসিপি দেখুন</p>
-          </div>
-        </div>
-        <ChevronRight className="w-5 h-5 text-[#EDD6A9]" />
-      </div>
-
       {/* Facebook-inspired Compact Composer Box */}
       <div className="bg-white rounded-2xl p-4 border border-[#EDD6A9]/60 shadow-sm space-y-3">
         <div className="flex items-center gap-3">

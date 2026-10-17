@@ -457,7 +457,6 @@ export default function App() {
             onUpdateComments={setComments}
             user={user}
             onAddRewardTx={addRewardTx}
-            onOpenRecipes={() => setCurrentScreen('recipes')}
             onOpenTimeline={(name) =>
               name === user.name
                 ? setActiveTimelineTarget({ type: 'me' })

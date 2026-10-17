@@ -24,10 +24,12 @@ import {
   MessageSquare,
   Stethoscope,
   BookOpen,
-  Utensils
+  Utensils,
+  MessageSquareWarning
 } from 'lucide-react';
 import { AddressManagerModal } from './AddressManagerModal';
 import { SettingsModal } from './SettingsModal';
+import { ComplaintsModal } from './ComplaintsModal';
 
 interface ProfileDrawerProps {
   user: User;
@@ -77,6 +79,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showFullProfileModal, setShowFullProfileModal] = useState(false);
+  const [showComplaintsModal, setShowComplaintsModal] = useState(false);
 
   const [couponInput, setCouponInput] = useState('');
   const [couponError, setCouponError] = useState('');
@@ -329,6 +332,17 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400" />
             </button>
+
+            <button
+              onClick={() => setShowComplaintsModal(true)}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-white text-xs font-bold text-[#56020A] transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <MessageSquareWarning className="w-5 h-5 text-red-600" />
+                <span>অভিযোগ ও সাপোর্ট</span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-400" />
+            </button>
           </div>
 
           <div className="border-t border-[#EDD6A9]/60 my-2" />
@@ -404,6 +418,8 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
         isOpen={showAddressModal}
         onClose={() => setShowAddressModal(false)}
       />
+
+      <ComplaintsModal isOpen={showComplaintsModal} onClose={() => setShowComplaintsModal(false)} />
 
       <SettingsModal
         user={user}

@@ -57,6 +57,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         <form onSubmit={handleSave} className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 text-xs">
+          {/* Members always get every notification; only admins can filter theirs. */}
+          {user.isAdmin ? (
           <div className="bg-white p-4 rounded-xl border border-[#EDD6A9] space-y-3 shadow-sm">
             <h4 className="font-bold text-[#56020A]">নোটিফিকেশন পছন্দ</h4>
             <div className="flex items-center justify-between">
@@ -78,6 +80,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               />
             </div>
           </div>
+          ) : (
+            <p className="bg-blue-50 text-blue-700 p-3 rounded-xl">
+              সব গুরুত্বপূর্ণ আপডেট যেন মিস না হয়, তাই সব নোটিফিকেশন চালু থাকে।
+            </p>
+          )}
 
           <div className="bg-white p-4 rounded-xl border border-[#EDD6A9] space-y-3 shadow-sm">
             <h4 className="font-bold text-[#56020A]">প্রাইভেসি ও গোপনীয়তা</h4>

@@ -11,6 +11,9 @@
 
 import {
   User,
+  Complaint,
+  ComplaintCategory,
+  ComplaintStatus,
   Child,
   Post,
   Comment,
@@ -66,6 +69,7 @@ export interface AdminOverview {
   orders: (Order & { userId: string })[];
   products: Product[];
   submissions: ContestSubmission[];
+  complaints: Complaint[];
 }
 
 type WithReward<T> = T & { rewardTx: RewardTransaction | null };
@@ -120,6 +124,8 @@ export const babyCareService = {
       avatar: user.avatar,
       bio: user.bio,
       coverPhoto: user.coverPhoto,
+      location: user.location,
+      dateOfBirth: user.dateOfBirth,
       addresses: user.addresses,
       notificationPrefs: user.notificationPrefs,
       privacySettings: user.privacySettings,
@@ -169,6 +175,11 @@ export const babyCareService = {
   submitContestEntry: (contestId: string, data: { description: string; mediaUrl?: string; orderId?: string }) =>
     post<WithReward<{ submission: ContestSubmission }>>(`/contests/${id(contestId)}/submissions`, data),
 
+  // ---- Complaints ----
+  myComplaints: () => apiRequest<{ complaints: Complaint[] }>('/complaints'),
+  createComplaint: (data: { category: ComplaintCategory; details: string; attachmentUrl?: string }) =>
+    post<{ complaint: Complaint }>('/complaints', data),
+
   // ---- Synced per-user lists ----
   syncCollection: (collection: SyncedCollection, items: { id: string }[]) =>
     put<{ ok: true; count: number }>(`/sync/${collection}`, { items }),
@@ -181,5 +192,7 @@ export const babyCareService = {
       patch<WithReward<{ order: Order }>>(`/admin/orders/${id(orderId)}`, { status }),
     updateProduct: (productId: string, data: { stock?: number; price?: number }) =>
       patch<{ product: Product }>(`/admin/products/${id(productId)}`, data),
+    updateComplaint: (complaintId: string, data: { status?: ComplaintStatus; adminReply?: string }) =>
+      patch<{ complaint: Complaint }>(`/admin/complaints/${id(complaintId)}`, data),
   },
 };
