@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Mail, Phone, User as UserIcon } from 'lucide-react';
+import { DEFAULT_CONTACT_METHOD, PHONE_LOGIN_ENABLED } from '../../lib/config';
 
 interface SignUpScreenProps {
   onBack: () => void;
@@ -8,7 +9,8 @@ interface SignUpScreenProps {
 
 export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onProceed }) => {
   const [name, setName] = useState('');
-  const [method, setMethod] = useState<'whatsapp' | 'email'>('whatsapp');
+  const [method, setMethod] = useState<'whatsapp' | 'email'>(DEFAULT_CONTACT_METHOD);
+  const [agreed, setAgreed] = useState(false);
   const [contact, setContact] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -31,6 +33,11 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onProceed })
 
     if (method === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.trim())) {
       setErrorMsg('সঠিক ইমেইল ঠিকানা দিন।');
+      return;
+    }
+
+    if (!agreed) {
+      setErrorMsg('অ্যাকাউন্ট খুলতে শর্তাবলী ও গোপনীয়তা নীতিতে সম্মতি দিন।');
       return;
     }
 
@@ -82,8 +89,8 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onProceed })
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#56020A] mb-1">যোগাযোগের মাধ্যম</label>
-            <div className="grid grid-cols-2 gap-2 mb-3">
+            <label className="block text-xs font-bold text-[#56020A] mb-1">{PHONE_LOGIN_ENABLED ? 'যোগাযোগের মাধ্যম' : 'ইমেইল ঠিকানা'}</label>
+            <div className={`grid grid-cols-2 gap-2 mb-3 ${PHONE_LOGIN_ENABLED ? '' : 'hidden'}`}>
               <button
                 type="button"
                 onClick={() => setMethod('whatsapp')}
@@ -133,6 +140,22 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onProceed })
             )}
           </div>
 
+          <label className="flex items-start gap-2 text-xs text-gray-600 leading-relaxed cursor-pointer">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-0.5 w-4 h-4 accent-[#56020A]"
+            />
+            <span>
+              আমি{' '}
+              <a href="/terms.html" target="_blank" rel="noopener" className="text-[#56020A] font-bold underline">ব্যবহারের শর্তাবলী</a>
+              {' '}ও{' '}
+              <a href="/privacy-policy.html" target="_blank" rel="noopener" className="text-[#56020A] font-bold underline">গোপনীয়তা নীতি</a>
+              {' '}পড়েছি এবং সম্মত আছি। আমার বয়স ১৮ বছর বা তার বেশি।
+            </span>
+          </label>
+
           {errorMsg && (
             <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl">
               {errorMsg}
@@ -150,7 +173,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onProceed })
       </div>
 
       <div className="text-center text-[11px] text-gray-500 pb-4">
-        রেজিস্ট্রেশন করার মাধ্যমে আপনি আমাদের শর্তাবলীতে সম্মত হচ্ছেন।
+        Baby Care by Baby Masala
       </div>
     </div>
   );

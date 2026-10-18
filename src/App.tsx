@@ -34,7 +34,6 @@ import { WelcomeScreen } from './components/auth/WelcomeScreen';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { SignUpScreen } from './components/auth/SignUpScreen';
 import { LoginVerifyScreen } from './components/auth/LoginVerifyScreen';
-import { MembershipActivationScreen } from './components/auth/MembershipActivationScreen';
 
 // Social & Medical screens
 import { FriendsScreen } from './components/social/FriendsScreen';
@@ -162,7 +161,7 @@ export default function App() {
   };
 
   /**
-   * Loads all data for the signed-in user and enters the app (or membership screen).
+   * Loads all data for the signed-in user and enters the app.
    * `silent` refreshes in place without the full-screen loader.
    */
   const loadApp = async (silent = false) => {
@@ -174,7 +173,7 @@ export default function App() {
       const data = await babyCareService.bootstrap();
       applyBootstrap(data);
       setIsHydrated(true);
-      if (!silent) setAuthState(data.user.isMember ? 'app' : 'membership');
+      if (!silent) setAuthState('app');
     } catch (err) {
       if (!babyCareService.hasSession()) return;
       if (silent) {
@@ -336,16 +335,6 @@ export default function App() {
           );
         }}
         onChangeContact={() => setAuthState(isLoginMode ? 'login' : 'signup')}
-      />
-    );
-  }
-
-  if (authState === 'membership') {
-    return (
-      <MembershipActivationScreen
-        user={user}
-        onUpdateUser={setUser}
-        onFinish={() => setAuthState('app')}
       />
     );
   }

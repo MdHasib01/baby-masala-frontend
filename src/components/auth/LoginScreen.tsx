@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Mail, Phone } from 'lucide-react';
+import { DEFAULT_CONTACT_METHOD, PHONE_LOGIN_ENABLED } from '../../lib/config';
 
 interface LoginScreenProps {
   onBack: () => void;
@@ -8,8 +9,8 @@ interface LoginScreenProps {
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onBack, onProceed, onGoToSignUp }) => {
-  const [method, setMethod] = useState<'whatsapp' | 'email'>('whatsapp');
-  const [contact, setContact] = useState('01712345678'); // Default demo account
+  const [method, setMethod] = useState<'whatsapp' | 'email'>(DEFAULT_CONTACT_METHOD);
+  const [contact, setContact] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isSending, setIsSending] = useState(false);
 
@@ -59,16 +60,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onBack, onProceed, onG
 
         <div className="space-y-1">
           <h1 className="text-2xl font-bold text-[#56020A]">লগইন করুন</h1>
-          <p className="text-xs text-gray-600">আপনার অ্যাকাউন্টে প্রবেশ করতে যোগাযোগ মাধ্যম দিন।</p>
-          <p className="text-[11px] text-[#375013] font-semibold pt-1">
-            (ডেমো অ্যাকাউন্ট: <span className="font-mono bg-white px-1.5 py-0.5 rounded border border-[#EDD6A9]">01712345678</span>)
-          </p>
+          <p className="text-xs text-gray-600">আপনার অ্যাকাউন্টের ইমেইল দিন, আমরা সেখানে একটি যাচাই কোড পাঠাব।</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           <div>
-            <label className="block text-xs font-bold text-[#56020A] mb-1">লগইন মাধ্যম</label>
-            <div className="grid grid-cols-2 gap-2 mb-3">
+            <label className="block text-xs font-bold text-[#56020A] mb-1">{PHONE_LOGIN_ENABLED ? 'লগইন মাধ্যম' : 'ইমেইল ঠিকানা'}</label>
+            <div className={`grid grid-cols-2 gap-2 mb-3 ${PHONE_LOGIN_ENABLED ? '' : 'hidden'}`}>
               <button
                 type="button"
                 onClick={() => setMethod('whatsapp')}

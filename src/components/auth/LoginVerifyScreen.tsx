@@ -105,13 +105,11 @@ export const LoginVerifyScreen: React.FC<LoginVerifyScreenProps> = ({
           <div className="inline-flex p-1.5 bg-white rounded-full border-2 border-[#56020A] shadow-md mb-2">
             <img src="/logo.png" alt="Baby Care" className="w-14 h-14 rounded-full object-cover" />
           </div>
-          <h1 className="text-2xl font-bold text-[#56020A]">ডেমো কোড যাচাইকরণ</h1>
+          <h1 className="text-2xl font-bold text-[#56020A]">কোড যাচাইকরণ</h1>
           <p className="text-xs text-gray-600">
-            <span className="font-bold text-[#56020A]">{contact || '01712345678'}</span> নম্বরে পাঠানো ৬ ডিজিটের কোড দিন।
+            <span className="font-bold text-[#56020A]">{contact}</span> ঠিকানায় পাঠানো ৬ ডিজিটের কোড দিন।
           </p>
-          <p className="text-[11px] text-[#375013] font-semibold pt-1">
-            (ডেমো কোড: <span className="font-mono bg-white px-1.5 py-0.5 rounded border border-[#EDD6A9]">123456</span>)
-          </p>
+          <p className="text-[11px] text-gray-500 pt-1">ইমেইল না পেলে স্প্যাম/জাঙ্ক ফোল্ডারটি দেখুন।</p>
         </div>
 
         <form onSubmit={handleVerify} className="space-y-6 pt-4">

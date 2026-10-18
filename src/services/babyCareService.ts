@@ -37,7 +37,7 @@ import {
 } from '../types';
 import { apiRequest, tokenStore } from './api';
 
-export type AuthState = 'welcome' | 'signup' | 'login' | 'verify' | 'membership' | 'app';
+export type AuthState = 'welcome' | 'signup' | 'login' | 'verify' | 'app';
 
 /** Lists the client owns and syncs with PUT /api/sync/:collection. */
 export type SyncedCollection = 'children' | 'friends' | 'conversations' | 'messages' | 'doctorQuestions';
@@ -113,7 +113,6 @@ export const babyCareService = {
     return res;
   },
   activateMembership: (couponCode: string) => post<{ user: User }>('/auth/activate-membership', { couponCode }),
-  demoPurchaseMembership: () => post<{ user: User }>('/auth/demo-purchase'),
 
   // ---- Initial load ----
   bootstrap: () => apiRequest<BootstrapData>('/bootstrap'),
