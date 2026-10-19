@@ -167,7 +167,7 @@ export const LoginVerifyScreen: React.FC<LoginVerifyScreenProps> = ({
             onClick={onChangeContact}
             className="text-xs text-[#375013] font-semibold hover:underline block mx-auto"
           >
-            যোগাযোগ নম্বর পরিবর্তন করুন
+            ইমেইল পরিবর্তন করুন
           </button>
         </div>
       </div>

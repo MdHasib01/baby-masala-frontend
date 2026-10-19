@@ -59,7 +59,7 @@ const EMPTY_USER: User = {
   avatar: '',
   addresses: [],
   notificationPrefs: { push: true, sms: true, email: false, communityAlerts: true },
-  privacySettings: { shareProfile: true, showChildrenInfo: true },
+  privacySettings: { shareProfile: true, showChildrenInfo: false },
 };
 
 /**

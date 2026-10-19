@@ -53,7 +53,7 @@ export const RewardsTab: React.FC<RewardsTabProps> = ({
   // Redemption flow state inside Redeem Catalog
   const [selectedGift, setSelectedGift] = useState<GiftItem | null>(null);
   const [redemptionStep, setRedemptionStep] = useState<'details' | 'address' | 'success'>('details');
-  const [deliveryAddress, setDeliveryAddress] = useState(user.addresses[0]?.details || 'রোড ৭/এ, ধানমন্ডি, ঢাকা - ১২০৯');
+  const [deliveryAddress, setDeliveryAddress] = useState(user.addresses[0]?.details || '');
   const [deliveryCharge] = useState(50);
   const [redeemSuccessMsg, setRedeemSuccessMsg] = useState('');
   const [redeemError, setRedeemError] = useState('');
@@ -522,20 +522,21 @@ export const RewardsTab: React.FC<RewardsTabProps> = ({
             <div className="bg-white rounded-2xl p-4 border border-[#EDD6A9] space-y-3">
               <h3 className="text-sm font-bold text-[#56020A]">গত কনটেস্টের বিজয়ীবৃন্দ</h3>
               <div className="space-y-2.5">
-                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs flex items-center justify-between">
-                  <div>
-                    <p className="font-bold text-amber-900">সেরা বেবি রেসিপি কনটেস্ট (অক্টোবর)</p>
-                    <p className="text-amber-800">বিজয়ী: সুমাইয়া শারমিন (ধানমন্ডি, ঢাকা)</p>
-                  </div>
-                  <span className="bg-amber-200 text-amber-900 text-[10px] font-bold px-2 py-1 rounded-full">১ম স্থান</span>
-                </div>
-                <div className="p-3 bg-[#FAF6F0] rounded-xl border border-[#EDD6A9] text-xs flex items-center justify-between">
-                  <div>
-                    <p className="font-bold text-[#56020A]">স্বাস্থ্যকর পুষ্টি টিপস কনটেস্ট (সেপ্টেম্বর)</p>
-                    <p className="text-gray-600">বিজয়ী: ফারহানা সুলতানা (উত্তরা, ঢাকা)</p>
-                  </div>
-                  <span className="bg-[#EDD6A9] text-[#56020A] text-[10px] font-bold px-2 py-1 rounded-full">১ম স্থান</span>
-                </div>
+                {contests.flatMap((c) => (c.winners || []).map((w) => ({ title: c.title, ...w }))).length === 0 ? (
+                  <p className="text-xs text-gray-500 text-center py-4">এখনো কোনো বিজয়ী ঘোষণা হয়নি। কনটেস্ট শেষ হলে বিজয়ীদের নাম এখানে দেখানো হবে।</p>
+                ) : (
+                  contests
+                    .flatMap((c) => (c.winners || []).map((w) => ({ title: c.title, ...w })))
+                    .map((w, i) => (
+                      <div key={i} className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-amber-900">{w.title}</p>
+                          <p className="text-amber-800">বিজয়ী: {w.name}</p>
+                        </div>
+                        <span className="bg-amber-200 text-amber-900 text-[10px] font-bold px-2 py-1 rounded-full">{w.prize}</span>
+                      </div>
+                    ))
+                )}
               </div>
             </div>
           )}

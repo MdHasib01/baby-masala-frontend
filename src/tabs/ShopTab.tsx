@@ -37,7 +37,7 @@ export const ShopTab: React.FC<ShopTabProps> = ({
   const [showCheckout, setShowCheckout] = useState(false);
   
   // Checkout form state
-  const [shippingAddress, setShippingAddress] = useState(user.addresses[0]?.details || 'রোড ৭/এ, ধানমন্ডি, ঢাকা - ১২০৯');
+  const [shippingAddress, setShippingAddress] = useState(user.addresses[0]?.details || '');
   const [orderNotes, setOrderNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'online'>('cod');
   const [orderSuccess, setOrderSuccess] = useState<Order | null>(null);
