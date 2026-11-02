@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Complaint, ComplaintStatus, Contest, ContestSubmission, Order, Post, Product } from '../types';
-import { X, Shield, Package, ShoppingBag, Gift, Users, FileText, CheckCircle2, Trash2 } from 'lucide-react';
+import { X, Shield, Package, ShoppingBag, Gift, Users, FileText, CheckCircle2, Trash2, ExternalLink } from 'lucide-react';
 import { babyCareService } from '../services/babyCareService';
 import { errorMessage } from '../services/api';
 import { COMPLAINT_STATUSES, ComplaintCard } from './profile/ComplaintsModal';
@@ -47,12 +47,6 @@ export const AdminModal: React.FC<AdminModalProps> = ({ contests, isOpen, onClos
     } catch (err) {
       alert(errorMessage(err));
     }
-  };
-
-  const handleUpdateStock = (productId: string, newStock: number) => {
-    const stock = Math.max(0, newStock);
-    setProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, stock } : p)));
-    babyCareService.admin.updateProduct(productId, { stock }).catch((err) => alert(errorMessage(err)));
   };
 
   const handleUpdateComplaint = async (complaintId: string, data: { status?: ComplaintStatus; adminReply?: string }) => {
@@ -182,10 +176,17 @@ export const AdminModal: React.FC<AdminModalProps> = ({ contests, isOpen, onClos
               {orders.map((ord) => (
                 <div key={ord.id} className="bg-white p-4 rounded-xl border border-[#EDD6A9] space-y-3 shadow-sm">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="font-bold text-[#56020A]">অর্ডার #{ord.id} ({ord.createdAt})</span>
+                    <span className="font-bold text-[#56020A]">
+                      অর্ডার #{ord.storeOrderNo || ord.id} ({ord.createdAt})
+                    </span>
                     <span className="font-bold text-[#375013]">৳ {ord.totalAmount}</span>
                   </div>
                   <p className="text-xs text-gray-600">শিপিং ঠিকানা: {ord.shippingAddress}</p>
+                  {ord.storeOrderNo && (
+                    <p className="text-[11px] text-gray-500">
+                      মোবাইল: {ord.phone} · স্টোরে অর্ডার {ord.storeOrderNo} — কুরিয়ার ও কনফার্মেশন স্টোর অ্যাডমিন থেকে হবে।
+                    </p>
+                  )}
                   <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                     <span className="text-xs font-semibold text-gray-700">স্ট্যাটাস পরিবর্তন:</span>
                     <select
@@ -207,7 +208,18 @@ export const AdminModal: React.FC<AdminModalProps> = ({ contests, isOpen, onClos
 
           {activeTab === 'products' && (
             <div className="space-y-3">
-              <h3 className="text-sm font-bold text-[#56020A]">প্রোডাক্ট ও স্টক ম্যানেজমেন্ট</h3>
+              <h3 className="text-sm font-bold text-[#56020A]">স্টোরের প্রোডাক্ট</h3>
+              <div className="bg-[#EDD6A9]/30 border border-[#EDD6A9] rounded-xl p-3 text-xs text-gray-700 flex flex-wrap items-center gap-2 justify-between">
+                <span>শপের পণ্য, দাম ও প্যাক এখন Baby Masala স্টোর থেকে আসে। পরিবর্তন করতে স্টোর অ্যাডমিন ব্যবহার করুন। অ্যাপের অর্ডারও সেখানে দেখা যাবে।</span>
+                <a
+                  href="https://store.babymasalabd.com/admin"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#56020A] text-white rounded-lg font-bold"
+                >
+                  স্টোর অ্যাডমিন <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {products.map((p) => (
                   <div key={p.id} className="bg-white p-3 rounded-xl border border-[#EDD6A9] flex items-center justify-between shadow-sm">
@@ -218,15 +230,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({ contests, isOpen, onClos
                         <p className="text-xs text-[#375013] font-semibold">৳ {p.price}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500">স্টক:</span>
-                      <input
-                        type="number"
-                        value={p.stock}
-                        onChange={(e) => handleUpdateStock(p.id, parseInt(e.target.value) || 0)}
-                        className="w-16 px-2 py-1 text-xs border border-[#EDD6A9] rounded font-mono font-bold"
-                      />
-                    </div>
+                    <span className="text-[10px] text-gray-500 text-right">
+                      {(p.packs?.length || 1) > 1 ? `${p.packs!.length}টি প্যাক` : p.weight}
+                    </span>
                   </div>
                 ))}
               </div>

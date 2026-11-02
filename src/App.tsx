@@ -20,6 +20,7 @@ import {
   Doctor,
   DoctorQuestion,
   LeaderboardEntry,
+  ShopInfo,
 } from './types';
 import { babyCareService, AuthState, BootstrapData } from './services/babyCareService';
 import { ApiError, UPDATING_MESSAGE, onUnauthorized } from './services/api';
@@ -51,6 +52,9 @@ import { RecipesTab } from './tabs/RecipesTab';
 import { RewardsTab } from './tabs/RewardsTab';
 import { ShopTab } from './tabs/ShopTab';
 import { INITIAL_AGE_TIPS } from './data/mockData';
+
+/** Store delivery charges until the server sends its own. */
+const DEFAULT_SHOP: ShopInfo = { delivery: { inside: 70, outside: 110 } };
 
 export type ActiveTab = 'home' | 'baby' | 'friends' | 'rewards' | 'shop';
 
@@ -116,6 +120,7 @@ export default function App() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [shopInfo, setShopInfo] = useState<ShopInfo>(DEFAULT_SHOP);
 
   // Social & Medical state
   const [friends, setFriends] = useState<FriendUser[]>([]);
@@ -164,6 +169,7 @@ export default function App() {
     setNotifications(data.notifications);
     setCart(data.cart);
     setLeaderboard(data.leaderboard);
+    setShopInfo(data.shop ?? DEFAULT_SHOP);
     setFriends(data.friends);
     setConversations(data.conversations);
     setMessages(data.messages);
@@ -521,13 +527,13 @@ export default function App() {
         {activeTab === 'shop' && (
           <ShopTab
             products={products}
-            onUpdateProducts={setProducts}
             cart={cart}
             onUpdateCart={setCart}
             orders={orders}
             onUpdateOrders={setOrders}
             user={user}
             onAddRewardTx={addRewardTx}
+            delivery={shopInfo.delivery}
           />
         )}
       </main>

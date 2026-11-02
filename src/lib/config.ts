@@ -8,5 +8,5 @@ export const DEFAULT_CONTACT_METHOD: 'whatsapp' | 'email' = PHONE_LOGIN_ENABLED 
 export const APP_DOWNLOAD_URL =
   (import.meta.env.VITE_APP_DOWNLOAD_URL as string | undefined)?.trim() || '/BabyCare.apk';
 export const APP_DOWNLOAD_FILENAME = 'BabyCare.apk';
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.0.1';
 export const APP_SIZE_LABEL = '৫৬ MB';

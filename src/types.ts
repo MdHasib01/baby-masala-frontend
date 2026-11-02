@@ -141,6 +141,27 @@ export interface Product {
   rating: number;
   reviewsCount: number;
   pointsEarned?: number;
+  // ---- Baby Masala store products (backend/src/services/storeCatalog.js) ----
+  /** Pack name, e.g. "40g Glass Jar"; `weight` holds the same value. */
+  packLabel?: string;
+  short?: string;
+  badge?: string;
+  age?: string;
+  howToUse?: string;
+  benefits?: string[];
+  /** Combo contents. */
+  includes?: string[];
+  type?: 'product' | 'combo';
+  storeProductId?: string;
+  storeSlug?: string;
+  storeUrl?: string;
+  /** Every pack size of this product (listings only). Each pack is added to the cart on its own. */
+  packs?: Product[];
+}
+
+export type DeliveryArea = 'inside' | 'outside';
+export interface ShopInfo {
+  delivery: Record<DeliveryArea, number>;
 }
 
 export interface CartItem {
@@ -156,6 +177,12 @@ export interface Order {
   shippingAddress: string;
   createdAt: string;
   pointsEarned: number;
+  subtotal?: number;
+  deliveryCharge?: number;
+  /** Order number on the Baby Masala store, e.g. "BM10042". */
+  storeOrderNo?: string;
+  phone?: string;
+  area?: DeliveryArea;
 }
 
 export interface RewardTransaction {

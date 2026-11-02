@@ -34,6 +34,8 @@ import {
   Doctor,
   DoctorQuestion,
   LeaderboardEntry,
+  DeliveryArea,
+  ShopInfo,
 } from '../types';
 import { apiRequest, tokenStore } from './api';
 
@@ -63,6 +65,8 @@ export interface BootstrapData {
   doctors: Doctor[];
   doctorQuestions: DoctorQuestion[];
   leaderboard: LeaderboardEntry[];
+  /** Store delivery charges; missing on older servers. */
+  shop?: ShopInfo;
 }
 
 export interface AdminOverview {
@@ -155,12 +159,22 @@ export const babyCareService = {
   toggleSaveRecipe: (recipeId: string) => post<{ recipe: Recipe }>(`/recipes/${id(recipeId)}/save`),
 
   // ---- Shop ----
-  placeOrder: (data: { cart: CartItem[]; shippingAddress: string; notes?: string; paymentMethod: 'cod' | 'online' }) =>
+  placeOrder: (data: {
+    cart: CartItem[];
+    customerName: string;
+    phone: string;
+    area: DeliveryArea;
+    shippingAddress: string;
+    notes?: string;
+  }) =>
     post<WithReward<{ order: Order; products: Product[] }>>('/orders', {
       items: data.cart.map((i) => ({ productId: i.product.id, quantity: i.quantity })),
+      customerName: data.customerName,
+      phone: data.phone,
+      area: data.area,
       shippingAddress: data.shippingAddress,
       notes: data.notes,
-      paymentMethod: data.paymentMethod,
+      paymentMethod: 'cod',
     }),
 
   // ---- Rewards & contests ----
