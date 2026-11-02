@@ -52,3 +52,33 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-reaction-pop, .animate-reaction-float, .animate-reaction-bar-in, .animate-reaction-item-in { animation: none; }
 }
+
+/* ---- Sheets & mobile shell (components/MobileShell.tsx, components/download/DownloadApp.tsx) ---- */
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-sheet-up { animation: sheet-up 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-pop-in { animation: pop-in 0.22s ease-out both; }
+.animate-fade-in { animation: fade-in 0.2s ease-out both; }
+@media (min-width: 40rem) {
+  .sm\:animate-pop-in { animation: pop-in 0.22s ease-out both; }
+}
+
+/* Space for the fixed bottom navigation on phones. */
+.pb-bottom-nav { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
+@media (min-width: 48rem) {
+  .pb-bottom-nav { padding-bottom: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet-up, .animate-pop-in, .animate-fade-in, .sm\:animate-pop-in { animation: none; }
+}

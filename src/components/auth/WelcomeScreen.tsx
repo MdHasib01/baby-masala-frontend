@@ -1,5 +1,7 @@
-import React from 'react';
-import { Sparkles, Heart, ShieldCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { Sparkles, ShieldCheck, Download, Smartphone } from 'lucide-react';
+import { DownloadAppSheet } from '../download/DownloadApp';
+import { APP_SIZE_LABEL } from '../../lib/config';
 
 interface WelcomeScreenProps {
   onGoToSignUp: () => void;
@@ -7,7 +9,10 @@ interface WelcomeScreenProps {
 }
 
 export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onGoToSignUp, onGoToLogin }) => {
+  const [showDownload, setShowDownload] = useState(false);
+
   return (
+    <>
     <div className="min-h-screen bg-[#FAF6F0] flex flex-col justify-between p-6 max-w-md mx-auto font-hind selection:bg-[#EDD6A9] selection:text-[#56020A]">
       <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 pt-10">
         <div className="w-28 h-28 rounded-full bg-white border-4 border-[#56020A] flex items-center justify-center shadow-xl text-[#56020A] relative p-1">
@@ -43,6 +48,26 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onGoToSignUp, onGo
         </div>
       </div>
 
+      <div className="pb-4">
+        {/* Get the Android app */}
+        <button
+          onClick={() => setShowDownload(true)}
+          className="w-full flex items-center gap-3 bg-gradient-to-br from-[#56020A] to-[#375013] text-white p-3.5 rounded-2xl shadow-md text-left active:scale-[0.99] hover:brightness-110 transition-all"
+        >
+          <span className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+            <Smartphone className="w-6 h-6 text-[#EDD6A9]" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-bold leading-tight">Baby Care অ্যাপ</span>
+            <span className="block text-[11px] text-white/75 mt-0.5">Android · ফ্রি · {APP_SIZE_LABEL}</span>
+          </span>
+          <span className="shrink-0 flex items-center gap-1 bg-white text-[#56020A] text-xs font-bold rounded-full px-3 py-1.5">
+            <Download className="w-3.5 h-3.5" />
+            ডাউনলোড
+          </span>
+        </button>
+      </div>
+
       <div className="space-y-3 pb-8">
         <button
           onClick={onGoToSignUp}
@@ -58,5 +83,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onGoToSignUp, onGo
         </button>
       </div>
     </div>
+    <DownloadAppSheet isOpen={showDownload} onClose={() => setShowDownload(false)} />
+    </>
   );
 };

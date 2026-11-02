@@ -27,6 +27,9 @@ import { Header } from './components/Header';
 import { ProfileDrawer } from './components/profile/ProfileDrawer';
 import { NotificationModal } from './components/NotificationModal';
 import { AdminModal } from './components/AdminModal';
+import { BottomNav } from './components/BottomNav';
+import { MoreSheet } from './components/MoreSheet';
+import { DownloadAppSheet, DownloadAppBanner } from './components/download/DownloadApp';
 import { ChevronLeft, Loader2 } from 'lucide-react';
 
 // Auth screens
@@ -136,6 +139,14 @@ export default function App() {
   const [showProfileDrawer, setShowProfileDrawer] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showMore, setShowMore] = useState(false);
+  const [showDownload, setShowDownload] = useState(false);
+
+  /** Bottom-nav tab switch on phones: new tab starts at the top, like the app. */
+  const selectTab = (tab: ActiveTab) => {
+    if (tab !== activeTab) window.scrollTo({ top: 0 });
+    setActiveTab(tab);
+  };
 
   const applyBootstrap = (data: BootstrapData) => {
     setUser(data.user);
@@ -198,6 +209,8 @@ export default function App() {
     setShowProfileDrawer(false);
     setShowNotifications(false);
     setShowAdmin(false);
+    setShowMore(false);
+    setShowDownload(false);
     setAuthState('welcome');
   };
 
@@ -239,6 +252,7 @@ export default function App() {
 
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
   const unreadMessagesCount = conversations.reduce((acc, c) => acc + c.unreadCount, 0);
+  const friendRequestsCount = friends.filter((f) => f.friendshipStatus === 'request_received' && !f.isBlocked).length;
 
   if (isLoading || loadError) {
     return (
@@ -428,16 +442,21 @@ export default function App() {
           setCurrentScreen('messenger');
         }}
         onOpenAdmin={() => setShowAdmin(true)}
+        onOpenTimeline={() => setActiveTimelineTarget({ type: 'me' })}
+        onOpenDownload={() => setShowDownload(true)}
         unreadNotificationsCount={unreadNotificationsCount}
         unreadMessagesCount={unreadMessagesCount}
-        friendRequestsCount={friends.filter((f) => f.friendshipStatus === 'request_received' && !f.isBlocked).length}
+        friendRequestsCount={friendRequestsCount}
         activeTab={activeTab}
         onChangeTab={setActiveTab}
         cartCount={cart.reduce((a, c) => a + c.quantity, 0)}
       />
 
+      {/* Phones: "get the app" banner */}
+      <DownloadAppBanner onOpen={() => setShowDownload(true)} />
+
       {/* Main Tab Content */}
-      <main className="flex-1">
+      <main className="flex-1 pb-bottom-nav">
         {activeTab === 'home' && (
           <CommunityTab
             posts={posts}
@@ -512,6 +531,41 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Phones: app-style bottom navigation + "আরও" sheet */}
+      <BottomNav
+        activeTab={activeTab}
+        onChangeTab={selectTab}
+        onOpenMore={() => setShowMore(true)}
+        moreActive={showMore || activeTab === 'friends'}
+        cartCount={cart.reduce((a, c) => a + c.quantity, 0)}
+        moreBadge={friendRequestsCount + unreadMessagesCount}
+      />
+
+      <MoreSheet
+        isOpen={showMore}
+        onClose={() => setShowMore(false)}
+        user={user}
+        onUpdateUser={setUser}
+        childrenList={childrenList}
+        rewardTx={rewardTx}
+        giftRedemptions={giftRedemptions}
+        unreadNotificationsCount={unreadNotificationsCount}
+        unreadMessagesCount={unreadMessagesCount}
+        friendRequestsCount={friendRequestsCount}
+        onNavigateTab={selectTab}
+        onNavigateScreen={(screen) => {
+          if (screen === 'messenger') setActiveMessengerFriend(null);
+          setCurrentScreen(screen);
+        }}
+        onOpenTimeline={() => setActiveTimelineTarget({ type: 'me' })}
+        onOpenNotifications={() => setShowNotifications(true)}
+        onOpenDownload={() => setShowDownload(true)}
+        onOpenAdmin={() => setShowAdmin(true)}
+        onLogout={resetSession}
+      />
+
+      <DownloadAppSheet isOpen={showDownload} onClose={() => setShowDownload(false)} />
 
       {/* Left-side Profile Drawer */}
       <ProfileDrawer

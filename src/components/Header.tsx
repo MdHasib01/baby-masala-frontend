@@ -1,7 +1,10 @@
 import React from 'react';
-import { Bell, MessageSquare, ShieldCheck, Home, Baby, Users, Gift, ShoppingBag } from 'lucide-react';
+import { Bell, MessageSquare, ShieldCheck, Home, Baby, Users, Gift, ShoppingBag, Download } from 'lucide-react';
 import { User } from '../types';
 import { ActiveTab } from '../App';
+import { DownloadAppPill } from './download/DownloadApp';
+
+const toBn = (n: number) => (n > 99 ? '৯৯+' : String(n).replace(/d/g, (d) => '০১২৩৪৫৬৭৮৯'[Number(d)]));
 
 interface HeaderProps {
   user: User;
@@ -9,6 +12,9 @@ interface HeaderProps {
   onOpenNotifications: () => void;
   onOpenMessenger: () => void;
   onOpenAdmin: () => void;
+  /** Phones: avatar opens the user's own timeline (like the app). */
+  onOpenTimeline: () => void;
+  onOpenDownload: () => void;
   unreadNotificationsCount: number;
   unreadMessagesCount: number;
   friendRequestsCount?: number;
@@ -23,6 +29,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenNotifications,
   onOpenMessenger,
   onOpenAdmin,
+  onOpenTimeline,
+  onOpenDownload,
   unreadNotificationsCount,
   unreadMessagesCount,
   friendRequestsCount = 0,
@@ -39,7 +47,50 @@ export const Header: React.FC<HeaderProps> = ({
   ];
 
   return (
-    <header className="sticky top-0 z-30 bg-[#FAF6F0]/95 backdrop-blur-md border-b border-[#EDD6A9]/50 shadow-sm">
+    <header className="sticky top-0 z-30 bg-[#FAF6F0] md:bg-[#FAF6F0]/95 md:backdrop-blur-md md:border-b md:border-[#EDD6A9]/50 md:shadow-sm">
+      {/* ---- Phones: compact top bar, same as the Android app (home_shell.dart _TopBar) ---- */}
+      <div className="md:hidden flex items-center gap-3 pl-4 pr-3 pb-2.5 pt-[max(10px,env(safe-area-inset-top))]">
+        <button onClick={onOpenTimeline} className="relative shrink-0" aria-label="আমার প্রোফাইল">
+          <span className="block w-[42px] h-[42px] rounded-full overflow-hidden border-2 border-[#EDD6A9] bg-[#EDD6A9]">
+            {user.avatar && <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />}
+          </span>
+          {user.isMember && (
+            <span className="absolute -right-0.5 -bottom-0.5 p-[2.5px] rounded-full bg-[#D6AA4F] border-2 border-[#FAF6F0] text-[#56020A]">
+              <ShieldCheck className="w-2.5 h-2.5" />
+            </span>
+          )}
+        </button>
+        <button onClick={() => onChangeTab('home')} className="flex-1 min-w-0 flex items-center gap-2 text-left" aria-label="হোম">
+          <img src="/logo.png" alt="" className="w-[30px] h-[30px] rounded-full object-cover shrink-0" />
+          <span className="min-w-0">
+            <span className="block text-[19px] font-extrabold text-[#56020A] leading-[1.1] truncate">Baby Care</span>
+            <span className="block text-[9px] font-bold text-[#375013] tracking-[0.15em] leading-tight">BY BABY MASALA</span>
+          </span>
+        </button>
+        <button
+          onClick={onOpenDownload}
+          className="shrink-0 w-10 h-10 rounded-full bg-white border border-[#EDD6A9]/70 flex items-center justify-center text-[#56020A] active:bg-[#EDD6A9]/30"
+          aria-label="অ্যাপ ডাউনলোড"
+          title="অ্যাপ ডাউনলোড"
+        >
+          <Download className="w-5 h-5" />
+        </button>
+        <button
+          onClick={onOpenNotifications}
+          className="relative shrink-0 w-10 h-10 rounded-full bg-white border border-[#EDD6A9]/70 flex items-center justify-center text-[#56020A] active:bg-[#EDD6A9]/30"
+          aria-label="নোটিফিকেশন"
+        >
+          <Bell className="w-5 h-5" />
+          {unreadNotificationsCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[17px] h-[17px] px-1 rounded-[10px] bg-[#DC2626] border-[1.5px] border-white text-white text-[9px] font-bold flex items-center justify-center leading-none">
+              {toBn(unreadNotificationsCount)}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* ---- Tablets & desktop ---- */}
+      <div className="hidden md:block">
       {/* Top Main Row */}
       <div className="px-4 py-2.5 flex items-center justify-between">
         {/* Top Left: Mother's circular profile avatar */}
@@ -79,6 +130,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Top Right: Admin button, Friends, Messenger & Notification Bell */}
         <div className="flex items-center gap-1 sm:gap-2">
+          <DownloadAppPill onClick={onOpenDownload} className="flex mr-1" />
           <button
             onClick={onOpenAdmin}
             className="text-[10px] sm:text-[11px] bg-[#EDD6A9]/60 hover:bg-[#EDD6A9] text-[#56020A] px-2 py-1.5 rounded-lg font-medium transition-colors border border-[#EDD6A9]"
@@ -163,6 +215,7 @@ export const Header: React.FC<HeaderProps> = ({
           })}
         </div>
       </nav>
+      </div>
     </header>
   );
 };
