@@ -52,6 +52,8 @@ export interface Comment {
   parentId?: string | null;
   authorName: string;
   authorAvatar: string;
+  /** Written by a labeled AI persona. */
+  isAi?: boolean;
   content: string;
   createdAt: string;
   likes: number;
@@ -63,6 +65,8 @@ export interface Post {
   authorName: string;
   authorAvatar: string;
   isVerifiedBuyer: boolean;
+  /** Written by a labeled AI persona (its name also ends with "(AI)"). */
+  isAi?: boolean;
   topic: 'সব পোস্ট' | 'খাবার' | 'ঘুম' | 'বিকাশ' | 'মায়ের গল্প';
   content: string;
   mediaUrl?: string;

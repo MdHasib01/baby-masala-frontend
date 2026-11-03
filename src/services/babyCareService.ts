@@ -210,5 +210,104 @@ export const babyCareService = {
       patch<{ product: Product }>(`/admin/products/${id(productId)}`, data),
     updateComplaint: (complaintId: string, data: { status?: ComplaintStatus; adminReply?: string }) =>
       patch<{ complaint: Complaint }>(`/admin/complaints/${id(complaintId)}`, data),
+
+    // Labeled AI personas (backend calls node-agent; its token never reaches the browser).
+    ai: {
+      status: () => apiRequest<AiStatus>('/admin/ai/status'),
+      personas: (active?: boolean) =>
+        apiRequest<{ personas: AiPersona[]; total: number }>(
+          `/admin/ai/personas${active === undefined ? '' : `?active=${active}`}`
+        ),
+      generatePersonas: (count: number, guidance?: string) =>
+        post<{ batch: AiBatch }>('/admin/ai/personas/generate', { count, ...(guidance ? { guidance } : {}) }),
+      batches: () => apiRequest<{ batches: AiBatch[]; generating: boolean }>('/admin/ai/batches'),
+      batch: (batchId: string) => apiRequest<{ batch: AiBatch }>(`/admin/ai/batches/${id(batchId)}`),
+      regeneratePhoto: (personaId: string) => post<{ persona: AiPersona }>(`/admin/ai/personas/${id(personaId)}/photo`),
+      createPersona: (data: AiPersonaInput) => post<{ persona: AiPersona }>('/admin/ai/personas', data),
+      updatePersona: (personaId: string, data: Partial<AiPersonaInput>) =>
+        patch<{ persona: AiPersona }>(`/admin/ai/personas/${id(personaId)}`, data),
+      deletePersona: (personaId: string) => del<{ ok: true }>(`/admin/ai/personas/${id(personaId)}`),
+      postNow: (personaId: string, topic?: string) =>
+        post<{ post: Post }>(`/admin/ai/personas/${id(personaId)}/post-now`, topic ? { topic } : {}),
+      replyTo: (postId: string, personaId?: string) =>
+        post<{ comment: Comment }>(`/admin/ai/reply/${id(postId)}`, personaId ? { personaId } : {}),
+      runNow: () => post<{ ok: true; runs: AiRun[] }>('/admin/ai/run'),
+    },
   },
 };
+
+export interface AiPersona {
+  id: string;
+  name: string;
+  avatar: string;
+  bio: string;
+  voice: string;
+  focusTopics: string[];
+  active: boolean;
+  lastPostAt: string | null;
+  location?: string;
+}
+
+export interface AiBatchItem {
+  index: number;
+  status: 'pending' | 'profile' | 'photo' | 'done' | 'failed' | 'skipped';
+  name?: string;
+  avatar?: string;
+  userId?: string;
+  error?: string;
+}
+
+export interface AiBatch {
+  id: string;
+  requested: number;
+  guidance: string;
+  status: 'queued' | 'running' | 'done' | 'stopped';
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  done: number;
+  failed: number;
+  error: string | null;
+  items: AiBatchItem[];
+}
+
+export interface AiPersonaInput {
+  name: string;
+  avatar?: string;
+  bio?: string;
+  voice?: string;
+  focusTopics?: string[];
+  active?: boolean;
+}
+
+export interface AiRun {
+  at: string;
+  what: 'post' | 'reply';
+  persona?: string;
+  ok: boolean;
+  error?: string;
+  postId?: string;
+  topic?: string;
+  manual?: boolean;
+}
+
+export interface AiStatus {
+  agent: {
+    configured: boolean;
+    reachable: boolean;
+    tokenOk?: boolean;
+    latencyMs?: number;
+    clis?: string[];
+    message?: string;
+  };
+  scheduler: {
+    enabled: boolean;
+    running: boolean;
+    busy: boolean;
+    pausedUntil: string | null;
+    settings: { tickMinutes: number; postEveryHours: number; replyAfterMinutes: number; activeHours: [number, number] };
+  };
+  generating: boolean;
+  counts: { personas: number; aiPosts: number; aiComments: number };
+  runs: AiRun[];
+}

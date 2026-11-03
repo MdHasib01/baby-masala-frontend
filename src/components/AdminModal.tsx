@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Complaint, ComplaintStatus, Contest, ContestSubmission, Order, Post, Product } from '../types';
-import { X, Shield, Package, ShoppingBag, Gift, Users, FileText, CheckCircle2, Trash2, ExternalLink } from 'lucide-react';
+import { X, Shield, Package, ShoppingBag, Gift, Users, FileText, CheckCircle2, Trash2, ExternalLink, Bot } from 'lucide-react';
+import { AiPersonasPanel } from './admin/AiPersonasPanel';
 import { babyCareService } from '../services/babyCareService';
 import { errorMessage } from '../services/api';
 import { COMPLAINT_STATUSES, ComplaintCard } from './profile/ComplaintsModal';
@@ -13,7 +14,8 @@ interface AdminModalProps {
 
 /** Admin console. Loads all users' posts and orders from the admin API (admins only). */
 export const AdminModal: React.FC<AdminModalProps> = ({ contests, isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState<'posts' | 'orders' | 'products' | 'contests' | 'complaints' | 'coupons'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'orders' | 'products' | 'contests' | 'complaints' | 'coupons' | 'ai'>('posts');
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [posts, setPosts] = useState<Post[]>([]);
@@ -65,6 +67,19 @@ export const AdminModal: React.FC<AdminModalProps> = ({ contests, isOpen, onClos
       setPosts((prev) => prev.filter((p) => p.id !== postId));
     } catch (err) {
       alert(errorMessage(err));
+    }
+  };
+
+  const handleAiReply = async (postId: string) => {
+    setReplyingTo(postId);
+    try {
+      await babyCareService.admin.ai.replyTo(postId);
+      setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, commentsCount: p.commentsCount + 1 } : p)));
+      alert('AI ইউজারের উত্তর যোগ হয়েছে।');
+    } catch (err) {
+      alert(errorMessage(err));
+    } finally {
+      setReplyingTo(null);
     }
   };
 
@@ -135,6 +150,14 @@ export const AdminModal: React.FC<AdminModalProps> = ({ contests, isOpen, onClos
           >
             কুপন ও পয়েন্ট রুলস
           </button>
+          <button
+            onClick={() => setActiveTab('ai')}
+            className={`px-4 py-3 whitespace-nowrap border-b-2 transition-colors ${
+              activeTab === 'ai' ? 'border-[#56020A] bg-white text-[#56020A]' : 'border-transparent'
+            }`}
+          >
+            AI ইউজার
+          </button>
         </div>
 
         {/* Admin Content */}
@@ -150,6 +173,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ contests, isOpen, onClos
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-bold text-[#56020A]">{post.authorName}</span>
+                      {post.isAi && <span className="text-[10px] bg-[#56020A]/10 text-[#56020A] px-1.5 py-0.5 rounded font-semibold">AI</span>}
                       <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{post.topic}</span>
                     </div>
                     <p className="text-xs text-gray-700 line-clamp-2">{post.content}</p>
@@ -157,6 +181,16 @@ export const AdminModal: React.FC<AdminModalProps> = ({ contests, isOpen, onClos
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-green-700 bg-green-50 px-2 py-1 rounded">অনুমোদিত</span>
+                    {!post.isAi && (
+                      <button
+                        onClick={() => handleAiReply(post.id)}
+                        disabled={replyingTo !== null}
+                        className="p-2 text-[#56020A] hover:bg-[#EDD6A9]/40 rounded-lg transition-colors disabled:opacity-40"
+                        title="AI ইউজার দিয়ে উত্তর দিন"
+                      >
+                        <Bot className={`w-4 h-4 ${replyingTo === post.id ? 'animate-pulse' : ''}`} />
+                      </button>
+                    )}
                     <button
                       onClick={() => handleDeletePost(post.id)}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -305,6 +339,8 @@ export const AdminModal: React.FC<AdminModalProps> = ({ contests, isOpen, onClos
               ))}
             </div>
           )}
+
+          {activeTab === 'ai' && <AiPersonasPanel />}
 
           {activeTab === 'coupons' && (
             <div className="space-y-4">

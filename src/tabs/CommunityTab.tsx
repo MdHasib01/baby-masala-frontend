@@ -27,9 +27,18 @@ import {
   Copy,
   Check,
   AlertCircle,
-
-
+  Bot,
 } from 'lucide-react';
+
+/** Marks posts and comments written by a labeled AI persona. */
+const AiBadge: React.FC<{ className?: string }> = ({ className = 'flex' }) => (
+  <span
+    title="এটি AI-এর লেখা, কোনো সত্যিকারের মানুষের নয়"
+    className={`${className} items-center gap-0.5 bg-[#56020A]/10 text-[#56020A] text-[10px] font-semibold px-1.5 py-0.5 rounded`}
+  >
+    <Bot className="w-3 h-3" /> AI
+  </span>
+);
 
 interface CommunityTabProps {
   posts: Post[];
@@ -290,6 +299,7 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
                         >
                           {post.authorName}
                         </h4>
+                        {post.isAi && <AiBadge />}
                         {post.isVerifiedBuyer && (
                           <span className="bg-[#375013]/10 text-[#375013] text-[10px] font-semibold px-1.5 py-0.5 rounded flex items-center gap-0.5">
                             <ShieldCheck className="w-3 h-3" /> মেম্বার
@@ -427,6 +437,7 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
                           className="font-bold text-[#56020A] block cursor-pointer hover:underline"
                         >
                           {postComments[0].authorName}
+                          {postComments[0].isAi && <AiBadge className="ml-1 inline-flex align-middle" />}
                         </span>
                         <p className="text-gray-700 mt-0.5">{postComments[0].content}</p>
                       </div>
@@ -464,7 +475,10 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
                 <div className="flex items-center gap-3">
                   <img src={activePost.authorAvatar} alt={activePost.authorName} className="w-9 h-9 rounded-full object-cover" />
                   <div>
-                    <h4 className="text-xs font-bold text-[#56020A]">{activePost.authorName}</h4>
+                    <h4 className="text-xs font-bold text-[#56020A]">
+                      {activePost.authorName}
+                      {activePost.isAi && <AiBadge className="ml-1 inline-flex align-middle" />}
+                    </h4>
                     <p className="text-[10px] text-gray-400">{activePost.createdAt}</p>
                   </div>
                 </div>
@@ -501,6 +515,7 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
                             className="font-bold text-[#56020A] cursor-pointer hover:underline block"
                           >
                             {comm.authorName}
+                            {comm.isAi && <AiBadge className="ml-1 inline-flex align-middle" />}
                           </span>
                           <p className="text-gray-700 whitespace-pre-line break-words">{comm.content}</p>
                         </div>
