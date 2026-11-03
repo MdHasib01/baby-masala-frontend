@@ -181,6 +181,8 @@ export const DownloadAppSheet: React.FC<DownloadAppSheetProps> = ({ isOpen, onCl
                       'ডাউনলোড শেষ হলে নোটিফিকেশন বা Downloads ফোল্ডার থেকে ফাইলটি খুলুন।',
                       'অনুমতি চাইলে "এই উৎস থেকে ইনস্টল করার অনুমতি দিন" চালু করুন।',
                       '"ইনস্টল" চাপুন — এরপর অ্যাপ খুলে আপনার অ্যাকাউন্টে লগইন করুন।',
+                      'Play Protect সতর্কতা দেখালে "আরও বিস্তারিত" → "তবুও ইনস্টল করুন" চাপুন। অ্যাপটি Nukta Technologies-এর স্বাক্ষর করা।',
+                      '"অ্যাপ ইনস্টল হয়নি" দেখালে: Play Store থেকে নেওয়া পুরনো BabyCare অ্যাপ থাকলে সেটি আনইনস্টল করে আবার চেষ্টা করুন।',
                     ].map((step, i) => (
                       <li key={i} className="flex gap-2.5 text-xs text-gray-700 leading-relaxed">
                         <span className="w-5 h-5 shrink-0 rounded-full bg-[#EDD6A9]/60 text-[#56020A] text-[10px] font-bold flex items-center justify-center">
