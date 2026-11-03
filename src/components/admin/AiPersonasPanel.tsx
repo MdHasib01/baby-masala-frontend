@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Bot, Camera, Pause, Pencil, Play, Plus, RefreshCw, Send, Sparkles, Trash2, UserPlus } from 'lucide-react';
+import { Bot, Camera, ImagePlus, Pause, Pencil, Play, Plus, RefreshCw, Send, Sparkles, Trash2, UserPlus } from 'lucide-react';
 import { AiBatch, AiPersona, AiPersonaInput, AiStatus, babyCareService } from '../../services/babyCareService';
 import { ApiError, errorMessage } from '../../services/api';
 
@@ -169,6 +169,9 @@ export const AiPersonasPanel: React.FC = () => {
             </p>
             <p className="text-gray-500">
               প্রতি {status.scheduler.settings.postEveryHours} ঘণ্টায় পোস্ট · {status.scheduler.settings.activeHours.join('–')}টা
+            </p>
+            <p className="text-gray-500" title="backend/.env: AI_IMAGE_POST_PERCENT">
+              {status.scheduler.settings.imagePostPercent ?? 0}% পোস্টে ছবি থাকবে
             </p>
             {status.scheduler.pausedUntil && (
               <p className="text-amber-700">বিরতি: {new Date(status.scheduler.pausedUntil).toLocaleTimeString()}</p>
@@ -392,9 +395,22 @@ export const AiPersonasPanel: React.FC = () => {
                   disabled={busy !== null || !agentOk}
                   onClick={() => void run(`post-${p.id}`, () => babyCareService.admin.ai.postNow(p.id), 'পোস্ট প্রকাশ হয়েছে।')}
                   className="p-1.5 text-[#375013] hover:bg-green-50 rounded-lg disabled:opacity-40"
-                  title="এখনই একটি পোস্ট লিখুন"
+                  title="এখনই একটি লেখা পোস্ট"
                 >
                   {busy === `post-${p.id}` ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                </button>
+                <button
+                  disabled={busy !== null || !agentOk}
+                  onClick={() =>
+                    void run(`imgpost-${p.id}`, async () => {
+                      const { imageError } = await babyCareService.admin.ai.postNow(p.id, { withImage: true });
+                      alert(imageError ? `পোস্ট প্রকাশ হয়েছে, কিন্তু ছবি তৈরি হয়নি: ${imageError}` : 'ছবিসহ পোস্ট প্রকাশ হয়েছে।');
+                    })
+                  }
+                  className="p-1.5 text-[#375013] hover:bg-green-50 rounded-lg disabled:opacity-40"
+                  title="এখনই ছবিসহ পোস্ট (১–৩ মিনিট লাগে)"
+                >
+                  {busy === `imgpost-${p.id}` ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
                 </button>
                 <button
                   disabled={busy !== null || !agentOk}
@@ -455,7 +471,9 @@ export const AiPersonasPanel: React.FC = () => {
           {status.runs.slice(0, 12).map((r, i) => (
             <p key={i} className={r.ok ? 'text-gray-700' : 'text-red-700'}>
               {new Date(r.at).toLocaleString()} · {r.what === 'post' ? 'পোস্ট' : 'উত্তর'} · {r.persona || '—'}
+              {r.withImage ? ' · ছবিসহ' : ''}
               {r.manual ? ' · ম্যানুয়াল' : ''} · {r.ok ? 'সফল' : r.error}
+              {r.ok && r.error ? <span className="text-amber-700"> ({r.error})</span> : null}
             </p>
           ))}
         </div>

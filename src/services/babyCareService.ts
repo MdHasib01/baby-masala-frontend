@@ -227,8 +227,8 @@ export const babyCareService = {
       updatePersona: (personaId: string, data: Partial<AiPersonaInput>) =>
         patch<{ persona: AiPersona }>(`/admin/ai/personas/${id(personaId)}`, data),
       deletePersona: (personaId: string) => del<{ ok: true }>(`/admin/ai/personas/${id(personaId)}`),
-      postNow: (personaId: string, topic?: string) =>
-        post<{ post: Post }>(`/admin/ai/personas/${id(personaId)}/post-now`, topic ? { topic } : {}),
+      postNow: (personaId: string, opts: { topic?: string; withImage?: boolean } = {}) =>
+        post<{ post: Post; imageError: string | null }>(`/admin/ai/personas/${id(personaId)}/post-now`, opts),
       replyTo: (postId: string, personaId?: string) =>
         post<{ comment: Comment }>(`/admin/ai/reply/${id(postId)}`, personaId ? { personaId } : {}),
       runNow: () => post<{ ok: true; runs: AiRun[] }>('/admin/ai/run'),
@@ -288,6 +288,8 @@ export interface AiRun {
   error?: string;
   postId?: string;
   topic?: string;
+  /** The post went up with a generated photo. */
+  withImage?: boolean;
   manual?: boolean;
 }
 
@@ -305,7 +307,13 @@ export interface AiStatus {
     running: boolean;
     busy: boolean;
     pausedUntil: string | null;
-    settings: { tickMinutes: number; postEveryHours: number; replyAfterMinutes: number; activeHours: [number, number] };
+    settings: {
+      tickMinutes: number;
+      postEveryHours: number;
+      replyAfterMinutes: number;
+      imagePostPercent: number;
+      activeHours: [number, number];
+    };
   };
   generating: boolean;
   counts: { personas: number; aiPosts: number; aiComments: number };
