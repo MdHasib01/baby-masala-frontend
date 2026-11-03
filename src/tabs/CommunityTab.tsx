@@ -4,6 +4,7 @@ import { babyCareService } from '../services/babyCareService';
 import { errorMessage } from '../services/api';
 import { applyReaction, myReactionOf, ReactionButton, ReactionSummary } from '../components/social/Reactions';
 import { EmojiButton } from '../components/EmojiPicker';
+import { FeedImage } from '../components/social/FeedImage';
 import { celebrate } from '../lib/celebrate';
 import {
   Heart,
@@ -386,9 +387,7 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
 
                 {/* Media Preview */}
                 {post.mediaUrl && (
-                  <div className="mt-2 bg-gray-100 max-h-80 overflow-hidden">
-                    <img src={post.mediaUrl} alt="Post attachment" className="w-full h-full object-cover" />
-                  </div>
+                  <FeedImage src={post.mediaUrl} className="mt-2" />
                 )}
 
                 {/* Reaction Summary & Counts */}
@@ -484,7 +483,7 @@ export const CommunityTab: React.FC<CommunityTabProps> = ({
                 </div>
                 <p className="text-xs text-gray-800">{activePost.content}</p>
                 {activePost.mediaUrl && (
-                  <img src={activePost.mediaUrl} alt="attachment" className="rounded-lg max-h-60 w-full object-cover" />
+                  <FeedImage src={activePost.mediaUrl} alt="attachment" className="rounded-lg" />
                 )}
               </div>
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { FriendUser, Post } from '../../types';
 import { X, ShieldCheck, MapPin, UserPlus, MessageSquare, AlertCircle } from 'lucide-react';
+import { FeedImage } from './FeedImage';
 
 interface PublicProfileModalProps {
   friend: FriendUser;
@@ -81,7 +82,7 @@ export const PublicProfileModal: React.FC<PublicProfileModalProps> = ({
                   </div>
                   <p className="text-gray-800">{p.content}</p>
                   {p.mediaUrl && (
-                    <img src={p.mediaUrl} alt="post media" className="w-full h-40 object-cover rounded-lg" />
+                    <FeedImage src={p.mediaUrl} alt="post media" className="rounded-lg" />
                   )}
                 </div>
               ))

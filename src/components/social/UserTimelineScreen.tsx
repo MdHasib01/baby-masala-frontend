@@ -6,6 +6,7 @@ import { celebrate } from '../../lib/celebrate';
 import { EmojiButton } from '../EmojiPicker';
 import { ImageCropModal } from '../ImageCropModal';
 import { applyReaction, myReactionOf, ReactionButton, ReactionSummary } from './Reactions';
+import { FeedImage } from './FeedImage';
 import {
   ArrowLeft,
   Cake,
@@ -461,14 +462,11 @@ export const UserTimelineScreen: React.FC<UserTimelineScreenProps> = ({
                     <p className="text-xs text-gray-800 leading-relaxed">{post.content}</p>
 
                     {post.mediaUrl && (
-                      <div className="rounded-xl overflow-hidden border border-[#EDD6A9]/50 max-h-72">
-                        <img
-                          src={post.mediaUrl}
-                          alt="Post attachment"
-                          className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity"
-                          onClick={() => setLightboxImg(post.mediaUrl || null)}
-                        />
-                      </div>
+                      <FeedImage
+                        src={post.mediaUrl}
+                        className="rounded-xl border border-[#EDD6A9]/50"
+                        onClick={() => setLightboxImg(post.mediaUrl || null)}
+                      />
                     )}
 
                     <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-[11px] text-gray-500">
