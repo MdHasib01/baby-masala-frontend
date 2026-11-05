@@ -109,7 +109,13 @@ export const babyCareService = {
     babyCareService.setAuthState('welcome');
   },
 
-  requestOtp: (payload: { contact: string; mode: 'signup' | 'login'; name?: string }) =>
+  login: async (contact: string, password: string) => {
+    const res = await post<{ token: string; user: User; isNewUser: boolean }>('/auth/login', { contact, password });
+    tokenStore.set(res.token);
+    return res;
+  },
+  /** Signup sends the chosen password too; it is set once the email code is verified. */
+  requestOtp: (payload: { contact: string; mode: 'signup' | 'login'; name?: string; password?: string }) =>
     post<{ ok: true; contact: string; expiresInSeconds: number }>('/auth/request-otp', payload),
   verifyOtp: async (contact: string, code: string) => {
     const res = await post<{ token: string; user: User; isNewUser: boolean }>('/auth/verify-otp', { contact, code });

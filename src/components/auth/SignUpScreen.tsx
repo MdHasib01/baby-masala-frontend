@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Mail, Phone, User as UserIcon } from 'lucide-react';
+import { ArrowLeft, Lock, Mail, Phone, User as UserIcon } from 'lucide-react';
+
+const PASSWORD_MIN = 6;
 import { DEFAULT_CONTACT_METHOD, PHONE_LOGIN_ENABLED } from '../../lib/config';
 
 interface SignUpScreenProps {
   onBack: () => void;
-  onProceed: (name: string, contact: string, method: 'email' | 'whatsapp') => Promise<void> | void;
+  onProceed: (name: string, contact: string, password: string, method: 'email' | 'whatsapp') => Promise<void> | void;
 }
 
 export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onProceed }) => {
@@ -12,6 +14,8 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onProceed })
   const [method, setMethod] = useState<'whatsapp' | 'email'>(DEFAULT_CONTACT_METHOD);
   const [agreed, setAgreed] = useState(false);
   const [contact, setContact] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isSending, setIsSending] = useState(false);
 
@@ -36,6 +40,16 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onProceed })
       return;
     }
 
+    if (password.length < PASSWORD_MIN) {
+      setErrorMsg(`পাসওয়ার্ড কমপক্ষে ${PASSWORD_MIN} অক্ষরের হতে হবে।`);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMsg('দুটি পাসওয়ার্ড মেলেনি।');
+      return;
+    }
+
     if (!agreed) {
       setErrorMsg('অ্যাকাউন্ট খুলতে শর্তাবলী ও গোপনীয়তা নীতিতে সম্মতি দিন।');
       return;
@@ -44,7 +58,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onProceed })
     setErrorMsg('');
     setIsSending(true);
     try {
-      await onProceed(name.trim(), contact.trim(), method);
+      await onProceed(name.trim(), contact.trim(), password, method);
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'কোড পাঠানো যায়নি। আবার চেষ্টা করুন।');
     } finally {
@@ -138,6 +152,36 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onProceed })
                 />
               </div>
             )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-[#56020A] mb-1">পাসওয়ার্ড</label>
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-3 w-4 h-4 text-gray-400" />
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={`কমপক্ষে ${PASSWORD_MIN} অক্ষর`}
+                className="w-full pl-10 pr-4 py-2.5 text-xs bg-white border border-[#EDD6A9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#56020A]"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-[#56020A] mb-1">পাসওয়ার্ড নিশ্চিত করুন</label>
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-3 w-4 h-4 text-gray-400" />
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="আবার পাসওয়ার্ড লিখুন"
+                className="w-full pl-10 pr-4 py-2.5 text-xs bg-white border border-[#EDD6A9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#56020A]"
+              />
+            </div>
           </div>
 
           <label className="flex items-start gap-2 text-xs text-gray-600 leading-relaxed cursor-pointer">

@@ -1,42 +1,40 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Mail, Phone } from 'lucide-react';
-import { DEFAULT_CONTACT_METHOD, PHONE_LOGIN_ENABLED } from '../../lib/config';
+import { ArrowLeft, Eye, EyeOff, Lock, Mail } from 'lucide-react';
 
 interface LoginScreenProps {
   onBack: () => void;
-  onProceed: (contact: string, method: 'email' | 'whatsapp') => Promise<void> | void;
+  onProceed: (email: string, password: string) => Promise<void> | void;
   onGoToSignUp: () => void;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onBack, onProceed, onGoToSignUp }) => {
-  const [method, setMethod] = useState<'whatsapp' | 'email'>(DEFAULT_CONTACT_METHOD);
-  const [contact, setContact] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [isSending, setIsSending] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contact.trim()) {
-      setErrorMsg(method === 'whatsapp' ? 'হোয়াটসঅ্যাপ নম্বর লিখুন।' : 'ইমেইল ঠিকানা লিখুন।');
+    if (!email.trim()) {
+      setErrorMsg('ইমেইল ঠিকানা লিখুন।');
       return;
     }
-
-    if (method === 'whatsapp' && !/^01[0-9]{9}$/.test(contact.trim())) {
-      setErrorMsg('সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 01712345678)।');
-      return;
-    }
-
-    if (method === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.trim())) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setErrorMsg('সঠিক ইমেইল ঠিকানা দিন।');
+      return;
+    }
+    if (!password) {
+      setErrorMsg('পাসওয়ার্ড লিখুন।');
       return;
     }
 
     setErrorMsg('');
     setIsSending(true);
     try {
-      await onProceed(contact.trim(), method);
+      await onProceed(email.trim(), password);
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'কোড পাঠানো যায়নি। আবার চেষ্টা করুন।');
+      setErrorMsg(err instanceof Error ? err.message : 'লগইন করা যায়নি। আবার চেষ্টা করুন।');
     } finally {
       setIsSending(false);
     }
@@ -60,60 +58,46 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onBack, onProceed, onG
 
         <div className="space-y-1">
           <h1 className="text-2xl font-bold text-[#56020A]">লগইন করুন</h1>
-          <p className="text-xs text-gray-600">আপনার অ্যাকাউন্টের ইমেইল দিন, আমরা সেখানে একটি যাচাই কোড পাঠাব।</p>
+          <p className="text-xs text-gray-600">আপনার অ্যাকাউন্টের ইমেইল ও পাসওয়ার্ড দিন।</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           <div>
-            <label className="block text-xs font-bold text-[#56020A] mb-1">{PHONE_LOGIN_ENABLED ? 'লগইন মাধ্যম' : 'ইমেইল ঠিকানা'}</label>
-            <div className={`grid grid-cols-2 gap-2 mb-3 ${PHONE_LOGIN_ENABLED ? '' : 'hidden'}`}>
+            <label className="block text-xs font-bold text-[#56020A] mb-1">ইমেইল ঠিকানা</label>
+            <div className="relative">
+              <Mail className="absolute left-3.5 top-3 w-4 h-4 text-gray-400" />
+              <input
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="mother@gmail.com"
+                className="w-full pl-10 pr-4 py-2.5 text-xs bg-white border border-[#EDD6A9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#56020A]"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-[#56020A] mb-1">পাসওয়ার্ড</label>
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-3 w-4 h-4 text-gray-400" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="আপনার পাসওয়ার্ড"
+                className="w-full pl-10 pr-10 py-2.5 text-xs bg-white border border-[#EDD6A9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#56020A]"
+              />
               <button
                 type="button"
-                onClick={() => setMethod('whatsapp')}
-                className={`py-2 text-xs font-bold rounded-xl border transition-all flex items-center justify-center gap-2 ${
-                  method === 'whatsapp'
-                    ? 'bg-[#56020A] text-white border-[#56020A]'
-                    : 'bg-white text-gray-700 border-[#EDD6A9]'
-                }`}
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'পাসওয়ার্ড লুকান' : 'পাসওয়ার্ড দেখুন'}
+                className="absolute right-3 top-2.5 p-0.5 text-gray-400 hover:text-[#56020A]"
               >
-                <Phone className="w-3.5 h-3.5" /> হোয়াটসঅ্যাপ
-              </button>
-              <button
-                type="button"
-                onClick={() => setMethod('email')}
-                className={`py-2 text-xs font-bold rounded-xl border transition-all flex items-center justify-center gap-2 ${
-                  method === 'email'
-                    ? 'bg-[#56020A] text-white border-[#56020A]'
-                    : 'bg-white text-gray-700 border-[#EDD6A9]'
-                }`}
-              >
-                <Mail className="w-3.5 h-3.5" /> ইমেইল
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-
-            {method === 'whatsapp' ? (
-              <div className="relative">
-                <Phone className="absolute left-3.5 top-3 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={contact}
-                  onChange={(e) => setContact(e.target.value)}
-                  placeholder="01712345678"
-                  className="w-full pl-10 pr-4 py-2.5 text-xs bg-white border border-[#EDD6A9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#56020A]"
-                />
-              </div>
-            ) : (
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-3 w-4 h-4 text-gray-400" />
-                <input
-                  type="email"
-                  value={contact}
-                  onChange={(e) => setContact(e.target.value)}
-                  placeholder="mother@gmail.com"
-                  className="w-full pl-10 pr-4 py-2.5 text-xs bg-white border border-[#EDD6A9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#56020A]"
-                />
-              </div>
-            )}
           </div>
 
           {errorMsg && (
@@ -127,7 +111,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onBack, onProceed, onG
             disabled={isSending}
             className="w-full py-3.5 bg-[#56020A] hover:bg-[#56020A]/90 text-white font-bold text-sm rounded-xl shadow-md transition-colors mt-4 disabled:opacity-60"
           >
-            {isSending ? 'কোড পাঠানো হচ্ছে...' : 'কোড পাঠান'}
+            {isSending ? 'লগইন হচ্ছে...' : 'লগইন'}
           </button>
         </form>
 

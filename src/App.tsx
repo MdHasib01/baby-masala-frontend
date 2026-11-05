@@ -138,6 +138,8 @@ export default function App() {
   // Temp auth data
   const [tempContact, setTempContact] = useState('');
   const [tempName, setTempName] = useState('');
+  // Signup only, kept in memory so "resend code" still carries the chosen password.
+  const [tempPassword, setTempPassword] = useState('');
   const [isLoginMode, setIsLoginMode] = useState(false);
 
   // Modals inside main app
@@ -311,11 +313,9 @@ export default function App() {
     return (
       <LoginScreen
         onBack={() => setAuthState('welcome')}
-        onProceed={async (contact) => {
-          await babyCareService.requestOtp({ contact, mode: 'login' });
-          setTempContact(contact);
-          setIsLoginMode(true);
-          setAuthState('verify');
+        onProceed={async (contact, password) => {
+          await babyCareService.login(contact, password);
+          loadApp();
         }}
         onGoToSignUp={() => setAuthState('signup')}
       />
@@ -326,9 +326,10 @@ export default function App() {
     return (
       <SignUpScreen
         onBack={() => setAuthState('welcome')}
-        onProceed={async (name, contact) => {
-          await babyCareService.requestOtp({ contact, mode: 'signup', name });
+        onProceed={async (name, contact, password) => {
+          await babyCareService.requestOtp({ contact, mode: 'signup', name, password });
           setTempName(name);
+          setTempPassword(password);
           setTempContact(contact);
           setIsLoginMode(false);
           setAuthState('verify');
@@ -345,13 +346,14 @@ export default function App() {
         onBack={() => setAuthState(isLoginMode ? 'login' : 'signup')}
         onVerify={async (code) => {
           await babyCareService.verifyOtp(tempContact, code);
+          setTempPassword('');
         }}
         onVerifySuccess={() => loadApp()}
         onResend={async () => {
           await babyCareService.requestOtp(
             isLoginMode
               ? { contact: tempContact, mode: 'login' }
-              : { contact: tempContact, mode: 'signup', name: tempName }
+              : { contact: tempContact, mode: 'signup', name: tempName, password: tempPassword }
           );
         }}
         onChangeContact={() => setAuthState(isLoginMode ? 'login' : 'signup')}
