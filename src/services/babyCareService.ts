@@ -69,12 +69,30 @@ export interface BootstrapData {
   shop?: ShopInfo;
 }
 
+export interface AdminStats {
+  /** Real (non-AI) accounts. */
+  users: number;
+  newUsers7d: number;
+  aiPersonas: number;
+  posts: number;
+  posts7d: number;
+  orders: number;
+  ordersByStatus: Record<Order['status'], number>;
+  /** Sum of non-cancelled orders, in taka. */
+  revenue: number;
+  openComplaints: number;
+  pendingSubmissions: number;
+}
+
 export interface AdminOverview {
   posts: (Post & { reportsCount: number })[];
   orders: (Order & { userId: string })[];
   products: Product[];
   submissions: ContestSubmission[];
   complaints: Complaint[];
+  /** Missing on older servers. */
+  contests?: Contest[];
+  stats?: AdminStats;
 }
 
 type WithReward<T> = T & { rewardTx: RewardTransaction | null };
@@ -210,12 +228,16 @@ export const babyCareService = {
   admin: {
     overview: () => apiRequest<AdminOverview>('/admin/overview'),
     deletePost: (postId: string) => del<{ ok: true }>(`/admin/posts/${id(postId)}`),
+    updatePostStatus: (postId: string, status: Post['status']) =>
+      patch<{ post: Post }>(`/admin/posts/${id(postId)}`, { status }),
     updateOrderStatus: (orderId: string, status: Order['status']) =>
       patch<WithReward<{ order: Order }>>(`/admin/orders/${id(orderId)}`, { status }),
     updateProduct: (productId: string, data: { stock?: number; price?: number }) =>
       patch<{ product: Product }>(`/admin/products/${id(productId)}`, data),
     updateComplaint: (complaintId: string, data: { status?: ComplaintStatus; adminReply?: string }) =>
       patch<{ complaint: Complaint }>(`/admin/complaints/${id(complaintId)}`, data),
+    updateSubmission: (submissionId: string, status: ContestSubmission['status']) =>
+      patch<{ submission: ContestSubmission }>(`/admin/submissions/${id(submissionId)}`, { status }),
 
     // Labeled AI personas (backend calls node-agent; its token never reaches the browser).
     ai: {

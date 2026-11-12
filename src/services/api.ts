@@ -39,7 +39,12 @@ export function getApiBaseUrl(): string {
 }
 
 export const API_BASE = getApiBaseUrl();
-const TOKEN_KEY = 'babycare_token';
+let tokenKey = 'babycare_token';
+
+/** The admin dashboard (/admin) keeps its own session, separate from the app's. */
+export const setTokenKey = (key: string) => {
+  tokenKey = key;
+};
 
 export class ApiError extends Error {
   status: number;
@@ -55,21 +60,21 @@ export class ApiError extends Error {
 export const tokenStore = {
   get(): string | null {
     try {
-      return localStorage.getItem(TOKEN_KEY);
+      return localStorage.getItem(tokenKey);
     } catch {
       return null;
     }
   },
   set(token: string) {
     try {
-      localStorage.setItem(TOKEN_KEY, token);
+      localStorage.setItem(tokenKey, token);
     } catch {
       /* storage unavailable: session lasts until reload */
     }
   },
   clear() {
     try {
-      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(tokenKey);
     } catch {
       /* ignore */
     }

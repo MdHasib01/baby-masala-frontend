@@ -27,7 +27,6 @@ import { ApiError, UPDATING_MESSAGE, onUnauthorized } from './services/api';
 import { Header } from './components/Header';
 import { ProfileDrawer } from './components/profile/ProfileDrawer';
 import { NotificationModal } from './components/NotificationModal';
-import { AdminModal } from './components/AdminModal';
 import { BottomNav } from './components/BottomNav';
 import { MoreSheet } from './components/MoreSheet';
 import { DownloadAppSheet, DownloadAppBanner } from './components/download/DownloadApp';
@@ -95,6 +94,9 @@ function useServerSync<T>(value: T, enabled: boolean, save: (value: T) => Promis
   }, [value, enabled]);
 }
 
+/** The admin dashboard is its own page (/admin/) with its own sign-in. */
+const openAdminDashboard = () => window.open('/admin/', '_blank', 'noopener');
+
 export default function App() {
   const [authState, setAuthState] = useState<AuthState>(babyCareService.getAuthState());
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
@@ -145,7 +147,6 @@ export default function App() {
   // Modals inside main app
   const [showProfileDrawer, setShowProfileDrawer] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showAdmin, setShowAdmin] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [showDownload, setShowDownload] = useState(false);
 
@@ -216,7 +217,6 @@ export default function App() {
     setActiveTimelineTarget(null);
     setShowProfileDrawer(false);
     setShowNotifications(false);
-    setShowAdmin(false);
     setShowMore(false);
     setShowDownload(false);
     setAuthState('welcome');
@@ -449,7 +449,7 @@ export default function App() {
           setActiveMessengerFriend(null);
           setCurrentScreen('messenger');
         }}
-        onOpenAdmin={() => setShowAdmin(true)}
+        onOpenAdmin={openAdminDashboard}
         onOpenTimeline={() => setActiveTimelineTarget({ type: 'me' })}
         onOpenDownload={() => setShowDownload(true)}
         unreadNotificationsCount={unreadNotificationsCount}
@@ -569,7 +569,7 @@ export default function App() {
         onOpenTimeline={() => setActiveTimelineTarget({ type: 'me' })}
         onOpenNotifications={() => setShowNotifications(true)}
         onOpenDownload={() => setShowDownload(true)}
-        onOpenAdmin={() => setShowAdmin(true)}
+        onOpenAdmin={openAdminDashboard}
         onLogout={resetSession}
       />
 
@@ -605,14 +605,6 @@ export default function App() {
         }}
       />
 
-      <AdminModal
-        contests={contests}
-        isOpen={showAdmin}
-        onClose={() => {
-          setShowAdmin(false);
-          loadApp(true);
-        }}
-      />
     </div>
   );
 }

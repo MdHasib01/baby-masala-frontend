@@ -131,13 +131,15 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Top Right: Admin button, Friends, Messenger & Notification Bell */}
         <div className="flex items-center gap-1 sm:gap-2">
           <DownloadAppPill onClick={onOpenDownload} className="flex mr-1" />
-          <button
-            onClick={onOpenAdmin}
-            className="text-[10px] sm:text-[11px] bg-[#EDD6A9]/60 hover:bg-[#EDD6A9] text-[#56020A] px-2 py-1.5 rounded-lg font-medium transition-colors border border-[#EDD6A9]"
-            title="ডেমো অ্যাডমিন"
-          >
-            অ্যাডমিন
-          </button>
+          {user.isAdmin && (
+            <button
+              onClick={onOpenAdmin}
+              className="text-[10px] sm:text-[11px] bg-[#EDD6A9]/60 hover:bg-[#EDD6A9] text-[#56020A] px-2 py-1.5 rounded-lg font-medium transition-colors border border-[#EDD6A9]"
+              title="অ্যাডমিন ড্যাশবোর্ড"
+            >
+              অ্যাডমিন
+            </button>
+          )}
 
           <button
             onClick={() => onChangeTab('friends')}
