@@ -51,6 +51,7 @@ import { RecipesTab } from './tabs/RecipesTab';
 import { RewardsTab } from './tabs/RewardsTab';
 import { ShopTab } from './tabs/ShopTab';
 import { INITIAL_AGE_TIPS } from './data/mockData';
+import Combo2Page from './combo-2/Combo2Page';
 
 /** Store delivery charges until the server sends its own. */
 const DEFAULT_SHOP: ShopInfo = { delivery: { inside: 70, outside: 110 } };
@@ -98,6 +99,11 @@ function useServerSync<T>(value: T, enabled: boolean, save: (value: T) => Promis
 const openAdminDashboard = () => window.open('/admin/', '_blank', 'noopener');
 
 export default function App() {
+  // Direct landing page route for /combo-2
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/combo-2')) {
+    return <Combo2Page />;
+  }
+
   const [authState, setAuthState] = useState<AuthState>(babyCareService.getAuthState());
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [currentScreen, setCurrentScreen] = useState<'app' | 'messenger' | 'doctor' | 'recipes' | 'friends'>('app');

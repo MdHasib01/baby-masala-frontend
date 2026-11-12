@@ -5,7 +5,7 @@ import {defineConfig, type Plugin} from 'vite';
 
 const root = import.meta.dirname || '.';
 
-/** Dev server: send /admin to /admin/ like Apache's mod_dir does in production. */
+/** Dev server: send /admin or /combo-2 to trailing slash like mod_dir. */
 const adminTrailingSlash = (): Plugin => ({
   name: 'admin-trailing-slash',
   configureServer(server) {
@@ -13,6 +13,11 @@ const adminTrailingSlash = (): Plugin => ({
       if (req.url === '/admin' || req.url?.startsWith('/admin?')) {
         res.statusCode = 301;
         res.setHeader('Location', req.url.replace('/admin', '/admin/'));
+        return res.end();
+      }
+      if (req.url === '/combo-2' || req.url?.startsWith('/combo-2?')) {
+        res.statusCode = 301;
+        res.setHeader('Location', req.url.replace('/combo-2', '/combo-2/'));
         return res.end();
       }
       next();
@@ -29,11 +34,12 @@ export default defineConfig(() => {
       },
     },
     build: {
-      // Two pages: the app (/) and the admin dashboard (/admin/), each with its own bundle.
+      // Multi-page entries: the app (/), the admin dashboard (/admin/), and combo landing (/combo-2/)
       rollupOptions: {
         input: {
           main: path.resolve(root, 'index.html'),
           admin: path.resolve(root, 'admin/index.html'),
+          combo2: path.resolve(root, 'combo-2/index.html'),
         },
       },
     },

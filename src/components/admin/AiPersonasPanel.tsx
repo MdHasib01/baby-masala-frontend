@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Bot, Camera, ImagePlus, Pause, Pencil, Play, Plus, RefreshCw, Send, Sparkles, Trash2, UserPlus } from 'lucide-react';
-import { AiBatch, AiPersona, AiPersonaInput, AiStatus, babyCareService } from '../../services/babyCareService';
+import { AiBatch, AiPersona, AiPersonaInput, AiStatus, AiStyleGroup, AiStyles, babyCareService } from '../../services/babyCareService';
 import { ApiError, errorMessage } from '../../services/api';
+import { AiStylePicker, comboLabel, savedStyles } from './AiStylePicker';
 
 const TOPICS = ['খাবার', 'ঘুম', 'বিকাশ', 'মায়ের গল্প'];
 const EMPTY: AiPersonaInput = { name: '', avatar: '', bio: '', voice: '', focusTopics: [], active: true };
@@ -22,6 +23,8 @@ const STEP_LABEL: Record<string, string> = {
 
 type Filter = 'all' | 'active' | 'paused';
 
+const RUN_LABEL: Record<string, string> = { post: 'পোস্ট', reply: 'উত্তর', comment: 'কমেন্ট', like: 'রিঅ্যাকশন' };
+
 /**
  * Admin → AI ইউজার. Generates AI users in bulk (realistic name, portrait, bio)
  * and manages them. Every AI user's name ends with "(AI)" and shows an AI badge.
@@ -38,6 +41,22 @@ export const AiPersonasPanel: React.FC = () => {
   const [count, setCount] = useState(5);
   const [guidance, setGuidance] = useState('');
   const [batch, setBatch] = useState<AiBatch | null>(null);
+  const [styleGroups, setStyleGroups] = useState<AiStyleGroup[]>([]);
+  const [minPerGroup, setMinPerGroup] = useState(2);
+  const [styles, setStyles] = useState<AiStyles | null>(null);
+
+  useEffect(() => {
+    babyCareService.admin.ai
+      .personaStyles()
+      .then(({ groups, minPerGroup: min }) => {
+        setStyleGroups(groups);
+        setMinPerGroup(min);
+        setStyles(savedStyles(groups, min));
+      })
+      .catch(() => {}); // older backend: generate without styles
+  }, []);
+
+  const stylesValid = !styles || styleGroups.every((g) => (styles[g.id] || []).length >= minPerGroup);
 
   const loadPersonas = useCallback(async () => {
     const active = filter === 'all' ? undefined : filter === 'active';
@@ -116,7 +135,11 @@ export const AiPersonasPanel: React.FC = () => {
     setError('');
     try {
       const n = Math.min(Math.max(Math.floor(count) || 1, 1), MAX_PER_BATCH);
-      const { batch: started } = await babyCareService.admin.ai.generatePersonas(n, guidance.trim() || undefined);
+      const { batch: started } = await babyCareService.admin.ai.generatePersonas(
+        n,
+        guidance.trim() || undefined,
+        styles || undefined
+      );
       setBatch(started);
     } catch (err) {
       setError(errorMessage(err));
@@ -146,8 +169,8 @@ export const AiPersonasPanel: React.FC = () => {
       </div>
 
       <p className="text-[11px] text-gray-600 bg-[#EDD6A9]/30 border border-[#EDD6A9] rounded-xl p-3">
-        AI ইউজারদের নামের পরে সবসময় "(AI)" থাকে এবং অ্যাপে AI ব্যাজ দেখায়। তারা লাইক/রিঅ্যাকশন দেয় না, পয়েন্ট পায় না,
-        লিডারবোর্ডে থাকে না, লগইন করতে পারে না। একটি পোস্টে সর্বোচ্চ একটি AI উত্তর যায়।
+        AI ইউজারদের নামের পরে সবসময় "(AI)" থাকে এবং অ্যাপে AI ব্যাজ দেখায়। তারা পয়েন্ট পায় না, লিডারবোর্ডে থাকে না,
+        লগইন করতে পারে না। স্বয়ংক্রিয় পোস্ট, কমেন্ট ও রিঅ্যাকশন চালানো হয় “AI টাস্ক” মেনু থেকে।
       </p>
 
       {error && <p className="text-xs font-semibold text-red-700 bg-red-50 border border-red-200 p-3 rounded-xl">{error}</p>}
@@ -163,32 +186,23 @@ export const AiPersonasPanel: React.FC = () => {
             {agent?.message && <p className="text-red-600 mt-1 break-words">{agent.message}</p>}
           </div>
           <div className="bg-white p-3 rounded-xl border border-[#EDD6A9]">
-            <p className="text-gray-500">অটো পোস্ট ও উত্তর</p>
-            <p className={`font-bold ${status.scheduler.running ? 'text-green-700' : 'text-gray-600'}`}>
-              {status.scheduler.running ? 'চালু' : 'বন্ধ (AI_COMMUNITY_ENABLED)'}
+            <p className="text-gray-500">AI টাস্ক (অটো)</p>
+            <p className={`font-bold ${status.scheduler.autoEnabled ? 'text-green-700' : 'text-gray-600'}`}>
+              {status.scheduler.autoEnabled ? 'চালু' : 'বন্ধ'}
             </p>
             <p className="text-gray-500">
-              প্রতি {status.scheduler.settings.postEveryHours} ঘণ্টায় পোস্ট · {status.scheduler.settings.activeHours.join('–')}টা
+              পোস্ট {status.scheduler.tasks.post.enabled ? '✓' : '✗'} · কমেন্ট {status.scheduler.tasks.comment.enabled ? '✓' : '✗'} ·
+              রিঅ্যাকশন {status.scheduler.tasks.like.enabled ? '✓' : '✗'}
             </p>
-            <p className="text-gray-500" title="backend/.env: AI_IMAGE_POST_PERCENT">
-              {status.scheduler.settings.imagePostPercent ?? 0}% পোস্টে ছবি থাকবে
-            </p>
-            {status.scheduler.pausedUntil && (
-              <p className="text-amber-700">বিরতি: {new Date(status.scheduler.pausedUntil).toLocaleTimeString()}</p>
-            )}
+            <a href="#aiTasks" className="mt-1 inline-flex items-center gap-1 font-bold text-[#56020A] underline">
+              <Play className="w-3 h-3" /> AI টাস্ক সেটিংস
+            </a>
           </div>
           <div className="bg-white p-3 rounded-xl border border-[#EDD6A9]">
             <p className="text-gray-500">মোট</p>
             <p className="font-bold text-[#56020A]">
               {status.counts.personas} AI ইউজার · {status.counts.aiPosts} পোস্ট · {status.counts.aiComments} কমেন্ট
             </p>
-            <button
-              disabled={busy !== null || !agentOk}
-              onClick={() => void run('tick', () => babyCareService.admin.ai.runNow())}
-              className="mt-1 inline-flex items-center gap-1 px-2 py-1 bg-[#56020A] text-white rounded-lg font-bold disabled:opacity-40"
-            >
-              <Play className="w-3 h-3" /> {busy === 'tick' ? 'চলছে…' : 'এখনই পোস্ট/উত্তর চালান'}
-            </button>
           </div>
         </div>
       )}
@@ -225,14 +239,32 @@ export const AiPersonasPanel: React.FC = () => {
             />
           </label>
           <button
-            disabled={!agentOk || batchActive}
+            disabled={!agentOk || batchActive || !stylesValid}
             onClick={() => void generate()}
             className="inline-flex items-center gap-1 px-3 py-2 bg-[#56020A] text-white rounded-lg font-bold disabled:opacity-40"
-            title={!agentOk ? 'আগে node-agent সংযোগ ঠিক করুন' : undefined}
+            title={
+              !agentOk
+                ? 'আগে node-agent সংযোগ ঠিক করুন'
+                : !stylesValid
+                  ? `প্রতিটি গ্রুপে অন্তত ${minPerGroup}টি অপশন বেছে নিন`
+                  : undefined
+            }
           >
             <UserPlus className="w-4 h-4" /> {batchActive ? 'তৈরি হচ্ছে…' : 'তৈরি করুন'}
           </button>
         </div>
+
+        {styles && styleGroups.length > 0 && (
+          <div className="border-t border-gray-100 pt-3">
+            <AiStylePicker
+              groups={styleGroups}
+              value={styles}
+              min={minPerGroup}
+              disabled={batchActive}
+              onChange={setStyles}
+            />
+          </div>
+        )}
 
         {batch && (
           <div className="border-t border-gray-100 pt-3 space-y-2">
@@ -262,6 +294,9 @@ export const AiPersonasPanel: React.FC = () => {
                   )}
                   <div className="min-w-0">
                     <p className="font-semibold text-[#56020A] truncate">{item.name || `AI ইউজার ${item.index}`}</p>
+                    {item.combo && (
+                      <p className="text-[10px] text-gray-400 break-words">{comboLabel(styleGroups, item.combo)}</p>
+                    )}
                     <p className={`text-[10px] ${item.status === 'failed' ? 'text-red-700' : 'text-gray-500'} break-words`}>
                       {STEP_LABEL[item.status]}
                       {item.error ? `: ${item.error}` : ''}
@@ -467,12 +502,12 @@ export const AiPersonasPanel: React.FC = () => {
 
       {status && status.runs.length > 0 && (
         <div className="bg-white p-3 rounded-xl border border-[#EDD6A9] text-[11px] space-y-1">
-          <h4 className="text-xs font-bold text-[#56020A]">সাম্প্রতিক পোস্ট ও উত্তর</h4>
+          <h4 className="text-xs font-bold text-[#56020A]">সাম্প্রতিক AI কাজ</h4>
           {status.runs.slice(0, 12).map((r, i) => (
             <p key={i} className={r.ok ? 'text-gray-700' : 'text-red-700'}>
-              {new Date(r.at).toLocaleString()} · {r.what === 'post' ? 'পোস্ট' : 'উত্তর'} · {r.persona || '—'}
+              {new Date(r.at).toLocaleString()} · {RUN_LABEL[r.what] || r.what} · {r.persona || r.personas?.join(', ') || '—'}
               {r.withImage ? ' · ছবিসহ' : ''}
-              {r.manual ? ' · ম্যানুয়াল' : ''} · {r.ok ? 'সফল' : r.error}
+              {r.manual ? ' · ম্যানুয়াল' : ''} · {r.ok ? r.note || 'সফল' : r.error}
               {r.ok && r.error ? <span className="text-amber-700"> ({r.error})</span> : null}
             </p>
           ))}

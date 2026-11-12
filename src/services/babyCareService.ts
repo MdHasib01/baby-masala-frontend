@@ -246,8 +246,13 @@ export const babyCareService = {
         apiRequest<{ personas: AiPersona[]; total: number }>(
           `/admin/ai/personas${active === undefined ? '' : `?active=${active}`}`
         ),
-      generatePersonas: (count: number, guidance?: string) =>
-        post<{ batch: AiBatch }>('/admin/ai/personas/generate', { count, ...(guidance ? { guidance } : {}) }),
+      personaStyles: () => apiRequest<{ groups: AiStyleGroup[]; minPerGroup: number }>('/admin/ai/persona-styles'),
+      generatePersonas: (count: number, guidance?: string, styles?: AiStyles) =>
+        post<{ batch: AiBatch }>('/admin/ai/personas/generate', {
+          count,
+          ...(guidance ? { guidance } : {}),
+          ...(styles ? { styles } : {}),
+        }),
       batches: () => apiRequest<{ batches: AiBatch[]; generating: boolean }>('/admin/ai/batches'),
       batch: (batchId: string) => apiRequest<{ batch: AiBatch }>(`/admin/ai/batches/${id(batchId)}`),
       regeneratePhoto: (personaId: string) => post<{ persona: AiPersona }>(`/admin/ai/personas/${id(personaId)}/photo`),
@@ -259,7 +264,14 @@ export const babyCareService = {
         post<{ post: Post; imageError: string | null }>(`/admin/ai/personas/${id(personaId)}/post-now`, opts),
       replyTo: (postId: string, personaId?: string) =>
         post<{ comment: Comment }>(`/admin/ai/reply/${id(postId)}`, personaId ? { personaId } : {}),
-      runNow: () => post<{ ok: true; runs: AiRun[] }>('/admin/ai/run'),
+      // Admin → AI টাস্ক: automatic posts, comment batches and reactions.
+      tasks: {
+        get: () => apiRequest<{ settings: AiTaskSettings; scheduler: AiSchedulerState; runs: AiRun[] }>('/admin/ai/tasks'),
+        update: (changes: AiTaskSettingsPatch) =>
+          patch<{ settings: AiTaskSettings; scheduler: AiSchedulerState }>('/admin/ai/tasks', changes),
+        run: (task: AiTaskKey) => post<{ run: AiRun; scheduler: AiSchedulerState }>(`/admin/ai/tasks/${task}/run`),
+      },
+      models: () => apiRequest<{ defaults: { cli: string | null; model: string } | null; clis: AiCliModels[] }>('/admin/ai/models'),
     },
   },
 };
@@ -283,12 +295,25 @@ export interface AiBatchItem {
   avatar?: string;
   userId?: string;
   error?: string;
+  /** This user's style mix: group id -> option id. */
+  combo?: Record<string, string>;
 }
+
+/** Style groups for the AI user generator (backend looks.js STYLE_GROUPS). */
+export interface AiStyleGroup {
+  id: string;
+  label: string;
+  options: { id: string; label: string }[];
+}
+
+/** Selected option ids per style group. */
+export type AiStyles = Record<string, string[]>;
 
 export interface AiBatch {
   id: string;
   requested: number;
   guidance: string;
+  styles?: AiStyles | null;
   status: 'queued' | 'running' | 'done' | 'stopped';
   createdAt: string;
   startedAt: string | null;
@@ -309,16 +334,89 @@ export interface AiPersonaInput {
 }
 
 export interface AiRun {
+  id?: string;
   at: string;
-  what: 'post' | 'reply';
+  what: 'post' | 'reply' | 'comment' | 'like';
   persona?: string;
+  /** AI users who took part (comment batches, reactions). */
+  personas?: string[];
   ok: boolean;
   error?: string;
+  note?: string;
+  count?: number;
   postId?: string;
   topic?: string;
   /** The post went up with a generated photo. */
   withImage?: boolean;
   manual?: boolean;
+}
+
+export type AiTaskKey = 'post' | 'comment' | 'like';
+
+/** A node-agent CLI + model; empty strings mean the backend/.env defaults. */
+export interface AiModelChoice {
+  cli: string;
+  model: string;
+}
+
+export interface AiTaskSettings {
+  autoEnabled: boolean;
+  activeHours: { start: number; end: number };
+  post: {
+    enabled: boolean;
+    minMinutes: number;
+    maxMinutes: number;
+    imagePercent: number;
+    textModel: AiModelChoice;
+    imageModel: AiModelChoice;
+  };
+  comment: {
+    enabled: boolean;
+    minMinutes: number;
+    maxMinutes: number;
+    minCount: number;
+    maxCount: number;
+    recentPosts: number;
+    maxAiCommentsPerPost: number;
+    includeAiPosts: boolean;
+    model: AiModelChoice;
+  };
+  like: {
+    enabled: boolean;
+    minMinutes: number;
+    maxMinutes: number;
+    minCount: number;
+    maxCount: number;
+    recentPosts: number;
+    reactionMix: { like: number; love: number; care: number; haha: number };
+  };
+  persona: { profileModel: AiModelChoice; portraitModel: AiModelChoice };
+}
+
+export type AiTaskSettingsPatch = Partial<{
+  [K in keyof AiTaskSettings]: AiTaskSettings[K] extends object ? Partial<AiTaskSettings[K]> : AiTaskSettings[K];
+}>;
+
+export interface AiTaskState {
+  enabled: boolean;
+  scheduled: boolean;
+  nextRunAt: string | null;
+  busy: boolean;
+  pausedUntil: string | null;
+}
+
+export interface AiSchedulerState {
+  autoEnabled: boolean;
+  activeHours: { start: number; end: number };
+  inActiveHours: boolean;
+  tasks: Record<AiTaskKey, AiTaskState>;
+}
+
+export interface AiCliModels {
+  cli: string;
+  label: string;
+  models: { id: string; label: string; description?: string | null }[];
+  warning: string | null;
 }
 
 export interface AiStatus {
@@ -330,19 +428,7 @@ export interface AiStatus {
     clis?: string[];
     message?: string;
   };
-  scheduler: {
-    enabled: boolean;
-    running: boolean;
-    busy: boolean;
-    pausedUntil: string | null;
-    settings: {
-      tickMinutes: number;
-      postEveryHours: number;
-      replyAfterMinutes: number;
-      imagePostPercent: number;
-      activeHours: [number, number];
-    };
-  };
+  scheduler: AiSchedulerState;
   generating: boolean;
   counts: { personas: number; aiPosts: number; aiComments: number };
   runs: AiRun[];
