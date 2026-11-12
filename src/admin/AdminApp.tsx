@@ -15,6 +15,7 @@ import {
   ShoppingBag,
   Smartphone,
   Trophy,
+  Workflow,
   X,
 } from 'lucide-react';
 import { User } from '../types';
@@ -29,9 +30,10 @@ import { ProductsSection } from './sections/ProductsSection';
 import { ContestsSection } from './sections/ContestsSection';
 import { ComplaintsSection } from './sections/ComplaintsSection';
 import { RulesSection } from './sections/RulesSection';
+import { AiTasksSection } from './sections/AiTasksSection';
 import { bn, SectionHeader } from './ui';
 
-export type SectionKey = 'dashboard' | 'posts' | 'orders' | 'products' | 'contests' | 'complaints' | 'ai' | 'rules';
+export type SectionKey = 'dashboard' | 'posts' | 'orders' | 'products' | 'contests' | 'complaints' | 'ai' | 'aiTasks' | 'rules';
 
 /** Lets a section change the loaded data after a successful API call. */
 export type UpdateData = (fn: (d: AdminOverview) => AdminOverview) => void;
@@ -52,6 +54,7 @@ const NAV: { group: string; items: { key: SectionKey; label: string; icon: React
     group: 'অন্যান্য',
     items: [
       { key: 'ai', label: 'AI ইউজার', icon: Bot },
+      { key: 'aiTasks', label: 'AI টাস্ক', icon: Workflow },
       { key: 'rules', label: 'কুপন ও পয়েন্ট রুলস', icon: Gift },
     ],
   },
@@ -363,6 +366,8 @@ const Dashboard: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLog
               <SectionHeader title="AI ইউজার" subtitle="লেবেলযুক্ত AI ইউজার তৈরি ও পরিচালনা — প্রত্যেকের নামের শেষে “(AI)” থাকে।" />
               <AiPersonasPanel />
             </>
+          ) : section === 'aiTasks' ? (
+            <AiTasksSection />
           ) : section === 'rules' ? (
             <RulesSection />
           ) : !data ? (
